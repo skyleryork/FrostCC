@@ -17,12 +17,14 @@ SET CompilerPath="%FalloutPath%\Papyrus Compiler"
 SET ArchiveToolPath="%FalloutPath%\Tools\Archive2"
 SET ArchiveSource="%CrowdControlPath%archive.source"
 SET ArchiveOutput="%FalloutPath%\Data\CrowdControl - Main.ba2"
+SETLOCAL EnableDelayedExpansion
 
 md %ScriptSourceUserPath%
-copy /Y "CrowdControl.psc" %ScriptSourceUserPath%
-if %errorlevel% neq 0 exit /b %errorlevel%
-copy /Y "CrowdControlApi.psc" %ScriptSourceUserPath%
-if %errorlevel% neq 0 exit /b %errorlevel%
+for %%F in ("%CrowdControlPath%*.psc") do (
+    copy /Y "%%F" %ScriptSourceUserPath%
+    if !errorlevel! neq 0 exit /b !errorlevel!
+)
+
 md %ScriptSourceFragmentPath%
 if not exist %ScriptSourceFragmentPath%QF_CrowdControlQuest_01000F99.psc (
     copy /Y ".\psc\QF_CrowdControlQuest_01000F99.psc" %ScriptSourceFragmentPath%
@@ -78,30 +80,44 @@ if not exist %ScriptDataPath%ObjectReference.pex (
 )
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-copy /Y ".\esp\CrowdControl.esp" %FalloutDataPath%
+copy /Y %FalloutDataPath%CrowdControl.esp ".\esp\"
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 cd /D %CompilerPath%
 if %errorlevel% neq 0 exit /b %errorlevel%
-PapyrusCompiler.exe "%CrowdControlPath%CrowdControlApi.psc" -f="Institute_Papyrus_Flags.flg" -i="%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%FalloutPath%\Data\Scripts" -op
-if %errorlevel% neq 0 exit /b %errorlevel%
-PapyrusCompiler.exe "%CrowdControlPath%CrowdControl.psc" -f="Institute_Papyrus_Flags.flg" -i="%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%FalloutPath%\Data\Scripts" -op
-if %errorlevel% neq 0 exit /b %errorlevel%
 
-SETLOCAL EnableDelayedExpansion
+for %%F in ("%CrowdControlPath%*.psc") do (
+    start "" /B cmd /c PapyrusCompiler.exe "%%F" -f="Institute_Papyrus_Flags.flg" -i="%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%FalloutPath%\Data\Scripts" -op
+)
+
+echo Waiting for all compilers to finish...
+:waitloop
+tasklist /FI "IMAGENAME eq PapyrusCompiler.exe" | find /I "PapyrusCompiler.exe" >nul
+if not errorlevel 1 (
+    timeout /t 1 >nul
+    goto waitloop
+)
+
 SET PexPath=!FalloutPath!\Data\Scripts\
 SET QuestPexPath=!FalloutPath!\Data\Scripts\Fragments\Quests\
+
+type nul > "%CrowdControlPath%archive.source"
 
 (
     echo !PexPath!Actor.pex
     echo !PexPath!CrowdControl.pex
     echo !PexPath!CrowdControlApi.pex
     echo !QuestPexPath!QF_CrowdControlQuest_01000F99.pex
-) > "%CrowdControlPath%archive.source"
-ENDLOCAL
+) >> "%CrowdControlPath%archive.source"
+
+for %%F in ("%CrowdControlPath%*.psc") do (
+    echo !PexPath!%%~nF.pex >> "%CrowdControlPath%archive.source"
+)
 
 cd /D %ArchiveToolPath%
 Archive2.exe -create=%ArchiveOutput% -sourceFile=%ArchiveSource%
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 cd /D %CrowdControlPath%
+
+ENDLOCAL

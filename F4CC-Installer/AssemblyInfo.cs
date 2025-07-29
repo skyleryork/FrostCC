@@ -10,5 +10,5 @@ using System.Reflection;
                                               // app, or any theme specific resource dictionaries)
 )]
 
-[assembly: AssemblyVersion("2.0.0.108")]
-[assembly: AssemblyFileVersion("2.0.0.108")]
+[assembly: AssemblyVersion("2.0.0.111")]
+[assembly: AssemblyFileVersion("2.0.0.111")]

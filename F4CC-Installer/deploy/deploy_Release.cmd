@@ -7,7 +7,7 @@ cd /D "%~dp0"
 call ..\..\set-paths.cmd
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-start /WAIT cmd /C sync_versions.cmd +1
+start /WAIT cmd /C sync_versions.cmd +0
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 cd ..\..\Papyrus

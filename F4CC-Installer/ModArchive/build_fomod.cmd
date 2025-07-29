@@ -24,5 +24,6 @@ copy /Y "..\..\F4SE-Plugin\x64\Release\CrowdControl.dll" .\InFomod\F4SE\Plugins
 if %errorlevel% neq 0 exit /b %errorlevel%
 "%SevenZipPath%\7z.exe" a -r -mx9 ".\F4CC_v%CurrentVersionFile%_kmrkle.tv.7z" ".\InFomod\*"
 if %errorlevel% neq 0 exit /b %errorlevel%
+md "..\deploy\Release"
 for %%f in (F4CC_v*) do move /Y "%%f" ..\deploy\Release
 if %errorlevel% neq 0 exit /b %errorlevel%

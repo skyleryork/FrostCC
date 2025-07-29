@@ -9,6 +9,9 @@
 
 #include <windows.h>
 #include <ShlObj.h>  // CSIDL_MYDOCUMENTS
+#include <algorithm>
+#include <numeric>
+#include <random>
 #include <stdexcept>
 #include <sstream>
 #include <stdexcept>
@@ -44,6 +47,7 @@ PluginHandle				g_pluginHandle;
 F4SEMessagingInterface*		g_messaging;
 F4SEPapyrusInterface*		g_papyrus;
 F4SEScaleformInterface*		g_scaleform;
+F4SESerializationInterface *g_serialization;
 
 class F4SEOpenCloseHandler : public BSTEventSink<MenuOpenCloseEvent>
 {
@@ -66,7 +70,7 @@ public:
 			(*g_ui)->IsMenuOpen("VATSMenu") || 
 			(*g_ui)->IsMenuOpen("LevelUpMenu") || 
 			(*g_ui)->IsMenuOpen("BookMenu");
-		
+
 		_DMESSAGE("[Main] Menu: %s", isOpen ? "Open" : "Closed");
 
 		if (connector != NULL)
@@ -182,7 +186,7 @@ DECLARE_STRUCT(CrowdControlCommand, "CrowdControlApi")
 CrowdControlCommand CrowdControlGetCommand(StaticFunctionTag*)
 {
 	CrowdControlCommand ccCommand;
-	
+
 	if (connector == NULL || connector->GetCommandCount() == 0) {
 		ccCommand.SetNone(true);
 
@@ -460,7 +464,7 @@ auto format_key = [](const std::string& prefix, int value, const std::string& su
 		ss << "-" << suffix;
 	}
 	return ss.str();
-};
+	};
 
 std::unordered_map<std::string, std::string> idToNameMap = {
 	{format_key("fallout4", 0x0014A349), "Armored Bathrobe"},
@@ -652,9 +656,9 @@ bool LoadIni()
 					_DMESSAGE("The INI file does not exist or there was an error accessing it: %s (lasterr = 0x%08X)", path, GetLastError());
 					return false;
 				}
-				
+
 				_DMESSAGE("Found Documents folder, loading INI (%s)...", path);
-				
+
 				auto error = ini.LoadFile(path);
 				if (error < 0)
 				{
@@ -695,6 +699,127 @@ float GetFloatSetting(StaticFunctionTag*, BSFixedString section, BSFixedString k
 }
 
 
+//
+// Chance
+//
+
+namespace chance
+{
+
+namespace lib
+{
+
+std::vector<std::mt19937> rngs;
+
+
+SInt32 AllocRNG()
+{
+	SInt32 index = rngs.size();
+	rngs.emplace_back( std::random_device{}( ) );
+	return index;
+}
+
+
+std::mt19937 *GetRNG( const SInt32 index )
+{
+	return ( index < rngs.size() ) ? &rngs[index] : nullptr;
+}
+
+
+std::vector<SInt32> ShuffledIndices( std::mt19937 &mt, const SInt32 count, const SInt32 start = 0 )
+{
+	std::vector<SInt32> indices( count );
+	std::iota( indices.begin(), indices.end(), start );
+	std::shuffle( indices.begin(), indices.end(), mt );
+	return indices;
+}
+
+}
+
+
+namespace api
+{
+
+SInt32 AllocRNG( StaticFunctionTag * )
+{
+	return lib::AllocRNG();
+}
+
+
+VMArray<SInt32> ShuffledIndices( StaticFunctionTag *, SInt32 rngIndex, SInt32 count, SInt32 start )
+{
+	VMArray<SInt32> result;
+	if ( const auto rng = lib::GetRNG( rngIndex ) )
+	{
+		for ( SInt32 index : lib::ShuffledIndices( *rng, count, start ) )
+		{
+			result.Push( &index );
+		}
+	}
+	return result;
+}
+
+
+TESForm *Roll( StaticFunctionTag *, SInt32 rngIndex, BGSListForm *items, VMArray<SInt32> counts, float rollChance, SInt32 filterBits, BGSListForm *foodFilter, BGSListForm *chemFilter, BGSListForm *ammoFilter, BGSListForm *valuableFilter, BGSListForm *toolFilter )
+{
+	_MESSAGE("ChanceApi::Roll - rngIndex: %i, rollChance: %f", rngIndex, rollChance);
+
+	if ( rollChance <= 0.0f )
+	{
+		return nullptr;
+	}
+
+	if ( const auto rng = lib::GetRNG( rngIndex ) )
+	{
+		for ( SInt32 index : lib::ShuffledIndices( *rng, counts.Length() ) )
+		{
+			SInt32 count;
+			counts.Get( &count, index );
+			if ( count > 0 )
+			{
+				TESForm *form;
+				if ( items->forms.GetNthItem( index, form ) )
+				{
+					if ( !( filterBits & 1 ) && ( foodFilter->forms.GetItemIndex( form ) >= 0 ) )
+					{
+						form = nullptr;
+					}
+					else if ( !( filterBits & 2 ) && ( chemFilter->forms.GetItemIndex( form ) >= 0 ) )
+					{
+						form = nullptr;
+					}
+					else if ( !( filterBits & 4 ) && ( ammoFilter->forms.GetItemIndex( form ) >= 0 ) )
+					{
+						form = nullptr;
+					}
+					else if ( !( filterBits & 8 ) && ( valuableFilter->forms.GetItemIndex( form ) >= 0 ) )
+					{
+						form = nullptr;
+					}
+					else if ( !( filterBits & 16 ) && ( toolFilter->forms.GetItemIndex( form ) >= 0 ) )
+					{
+						form = nullptr;
+					}
+
+					if ( ( form != nullptr ) && ( std::uniform_real_distribution<>( 0.0, 1.0 )( *rng ) <= rollChance ) )
+					{
+						count--;
+						counts.Set( &count, index );
+						return form;
+					}
+				}
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+}
+
+}
+
+
 bool RegisterFuncs(VirtualMachine * a_registry)
 {
 	a_registry->RegisterFunction(new NativeFunction0<StaticFunctionTag, BSFixedString>("Version", "CrowdControlApi", CrowdControlVersion, a_registry));
@@ -714,21 +839,74 @@ bool RegisterFuncs(VirtualMachine * a_registry)
 	a_registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, BSFixedString, BSFixedString>("GetName", "CrowdControlApi", CrowdControlGetName, a_registry));
 	a_registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, BSFixedString, SInt32>("GetNameId", "CrowdControlApi", CrowdControlGetNameId, a_registry));
 
+	// Chance
+	a_registry->RegisterFunction(new NativeFunction0<StaticFunctionTag, SInt32>("AllocRNG", "ChanceApi", chance::api::AllocRNG, a_registry));
+	a_registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, VMArray<SInt32>, SInt32, SInt32, SInt32>("ShuffledIndices", "ChanceApi", chance::api::ShuffledIndices, a_registry));
+	a_registry->RegisterFunction(new NativeFunction10<StaticFunctionTag, TESForm*, SInt32, BGSListForm*, VMArray<SInt32>, float, SInt32, BGSListForm*, BGSListForm*, BGSListForm*, BGSListForm*, BGSListForm*>("Roll", "ChanceApi", chance::api::Roll, a_registry));
+
 	return true;
 }
 
 void OnF4SEMessage(F4SEMessagingInterface::Message* msg) {
 	switch (msg->type) {
-		case F4SEMessagingInterface::kMessage_GameLoaded:
-			_MESSAGE("Game loaded.");
+	case F4SEMessagingInterface::kMessage_GameLoaded:
+		_MESSAGE("Game loaded.");
 
-			if (*g_ui)
+		if (*g_ui)
+		{
+			(*g_ui)->menuOpenCloseEventSource.AddEventSink(&g_menuOpenCloseHandler);
+
+			_MESSAGE("Menu event sink registered.");
+		}
+		break;
+	}
+}
+
+
+void OnF4SESave(const F4SESerializationInterface * intfc) {
+	// rngs
+	const UInt32 rngCount = chance::lib::rngs.size();
+	intfc->OpenRecord('RNGS', 0);
+	intfc->WriteRecordData( &rngCount, sizeof( rngCount ) );
+	for ( const auto &rng : chance::lib::rngs )
+	{
+		std::ostringstream oss;
+		oss << rng;
+		const auto str = oss.str();
+
+		const UInt32 len = str.length() + 1;
+		intfc->WriteRecordData( &len, sizeof( len ) );
+		intfc->WriteRecordData( str.c_str(), len );
+	}
+}
+
+
+void OnF4SELoad(const F4SESerializationInterface * intfc) {
+	UInt32 type, version, length;
+	while ( intfc->GetNextRecordInfo( &type, &version, &length ) )
+	{
+		switch ( type )
+		{
+		// rngs
+		case 'RNGS':
+		{
+			UInt32 rngCount;
+			intfc->ReadRecordData( &rngCount, sizeof( rngCount ) );
+			for ( ; rngCount > 0; --rngCount )
 			{
-				(*g_ui)->menuOpenCloseEventSource.AddEventSink(&g_menuOpenCloseHandler);
+				UInt32 len;
+				intfc->ReadRecordData( &len, sizeof( len ) );
 
-				_MESSAGE("Menu event sink registered.");
+				auto str = std::make_unique<char[]>( len );
+				intfc->ReadRecordData( str.get(), len );
+
+				std::mt19937 rng;
+				std::istringstream iss( str.get() );
+				iss >> rng;
+				chance::lib::rngs.emplace_back( std::move( rng ) );
 			}
-			break;
+		} break;
+		}
 	}
 }
 
@@ -737,21 +915,7 @@ void OnF4SEMessage(F4SEMessagingInterface::Message* msg) {
 //}
 
 extern "C" {
-	F4SEPluginVersionData F4SEPlugin_Version =
-	{
-		F4SEPluginVersionData::kVersion,
-
-		CC_VERSION_MAJOR,
-		"CrowdControlPlugin",
-		"",
-
-		0,
-		0,
-		{ RUNTIME_VERSION_1_10_163, RUNTIME_VERSION_1_10_980, RUNTIME_VERSION_1_10_984, 0 },
-		0,
-	};
-
-	bool F4SEPlugin_Preload(const F4SEInterface* f4se)
+	bool F4SEPlugin_Query( const F4SEInterface *f4se, PluginInfo *info )
 	{
 		gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Fallout4\\F4SE\\CrowdControl.log");
 		gLog.SetPrintLevel(IDebugLog::kLevel_DebugMessage);
@@ -761,12 +925,27 @@ extern "C" {
 		gLog.SetLogLevel(IDebugLog::kLevel_Message);
 #endif
 
+		info->infoVersion = PluginInfo::kInfoVersion;
+		info->name = "CrowdControlPlugin";
+		info->version = CC_VERSION_MAJOR;
 
-		_MESSAGE("CrowdControl Plugin v%s", CC_VERSION);
+		if (f4se->isEditor)
+		{
+			_MESSAGE("loaded in editor, marking as incompatible");
+
+			return false;
+		}
+		else if ((f4se->runtimeVersion != RUNTIME_VERSION_1_10_163) &&
+			(f4se->runtimeVersion != RUNTIME_VERSION_1_10_980) &&
+			(f4se->runtimeVersion != RUNTIME_VERSION_1_10_984))
+		{
+			_MESSAGE("unsupported runtime version %d", f4se->runtimeVersion);
+
+			return false;
+		}
 
 		return true;
 	}
-
 	bool F4SEPlugin_Load(const F4SEInterface* f4se)
 	{
 		_MESSAGE("Plugin loading...");
@@ -794,9 +973,18 @@ extern "C" {
 				return false;
 			}
 
+			g_serialization = (F4SESerializationInterface*)f4se->QueryInterface(kInterface_Serialization);
+			if (!g_serialization) {
+				_FATALERROR("couldn't get serialization interface");
+				return false;
+			}
+
 			LoadIdToNameMap();
 
 			connector = new Connector();
+
+			// default rng
+			chance::lib::AllocRNG();
 
 			if (g_papyrus) {
 				g_papyrus->Register(RegisterFuncs);
@@ -804,6 +992,12 @@ extern "C" {
 
 			if (g_messaging) {
 				g_messaging->RegisterListener(g_pluginHandle, "F4SE", OnF4SEMessage);
+			}
+
+			if (g_serialization) {
+				g_serialization->SetUniqueID(g_pluginHandle, 0xCC);
+				g_serialization->SetSaveCallback(g_pluginHandle, OnF4SESave);
+				g_serialization->SetLoadCallback(g_pluginHandle, OnF4SELoad);
 			}
 
 			_MESSAGE("Plugin loaded");

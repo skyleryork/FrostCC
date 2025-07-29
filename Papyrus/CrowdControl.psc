@@ -3,6 +3,14 @@
 
 Scriptname CrowdControl extends ReferenceAlias
 
+FormList Property SpawnMarkers Auto Const
+
+Chance CH = None
+
+Int[] ItemDie = None
+Int[] ItemResults = None
+Int[] ItemRolls = None
+
 string lastState = ""
 
 Int lastCommandId = -1
@@ -15,7 +23,6 @@ Faction playerEnemyFaction = None
 Faction playerAllyFaction = None
 Form launchMarker = None
 Keyword keywordActorFriendlyNpc = None
-Quest QuestMQ102 = None
 GlobalVariable GameHour = None
 ObjectReference containerAutoEquipStorage
 
@@ -73,21 +80,8 @@ Function InitVars()
         keywordActorFriendlyNpc = Game.GetFormFromFile(0x10053FF, "CrowdControl.esp") as Keyword
     endif
     
-    if QuestMQ102 == None
-        QuestMQ102 = Game.GetFormFromFile(0x1CC2A, "Fallout4.esm") as Quest
-    endif
-    
     if GameHour == None
         GameHour = Game.GetFormFromFile(0x38, "Fallout4.esm") as GlobalVariable
-    endif
-   
-    if containerAutoEquipStorage == None
-        ; Create a new container object
-        containerAutoEquipStorage = player.PlaceAtMe(Game.GetFormFromFile(0x01006AD6, "CrowdControl.esp"))
-        
-        ; Make the container invisible and inaccessible
-        containerAutoEquipStorage.Disable()
-        containerAutoEquipStorage.Lock()
     endif
     
     ; Get rid of Billy
@@ -101,10 +95,80 @@ Function InitVars()
     
     LastCellLoadAt = 0.0
 
+    If CH == None
+        CH = GetOwningQuest().GetAlias(0) as Chance
+	Endif
+
+    ; Chance
+    ; if ItemDie == None
+    ;     ItemDie = Chance.InitDie()
+    ;     ItemResults = Chance.InitResults(Game.GetFormFromFile(0x1356D, "CrowdControl.esp") as FormList)
+    ;     ItemRolls = Chance.InitRolls(ItemDie, ItemResults)
+
+    ;     Debug.Trace("Init - ItemDie: " + ItemDie)
+    ;     Debug.Trace("Init - ItemResults: " + ItemResults)
+    ;     Debug.Trace("Init - ItemRolls: " + ItemRolls)
+    ; EndIf
 EndFunction
 
+; Form Function RollItem(Form[] items)
+;     Debug.Trace("RollItem - ItemDie: " + ItemDie)
+;     Debug.Trace("RollItem - ItemResults: " + ItemResults)
+;     Debug.Trace("RollItem - ItemRolls: " + ItemRolls)
+
+;     ; Shuffle
+;     Int[] indices = new Int[items.Length]
+;     Int i = 0
+;     While i < indices.Length
+;         indices[i] = i
+;         i += 1
+;     EndWhile
+
+;     i = 0
+;     While i < ( indices.Length - 1 )
+;         Int j = Utility.RandomInt(i, indices.Length - 1)
+;         If i != j
+;             Int tmp = indices[i]
+;             indices[i] = indices[j]
+;             indices[j] = tmp
+;         EndIf
+;         i += 1
+;     EndWhile
+
+;     ; Roll
+;     i = 0
+;     While i < indices.Length
+;         Form item = items[indices[i]]
+;         If Chance.Roll(ItemDie, ItemResults, ItemRolls, item.GetFormID())
+;             return item
+;         EndIf
+;         i += 1
+;     EndWhile
+
+;     return None
+; EndFunction
+
+; Form Function RollItemFormList(FormList list)
+;     Form[] forms = new Form[list.GetSize()]
+;     Int i = 0
+;     While i < list.GetSize()
+;         forms[i] = list.GetAt(i)
+;         i += 1
+;     EndWhile
+;     return RollItem(forms)
+; EndFunction
+
 Event OnCellLoad()
-  LastCellLoadAt = Utility.GetCurrentRealTime()
+    LastCellLoadAt = Utility.GetCurrentRealTime()
+
+    if containerAutoEquipStorage == None
+        ; Create a new container object
+        containerAutoEquipStorage = player.PlaceAtMe(Game.GetFormFromFile(0x6AD6, "CrowdControl.esp"))
+        
+        ; Make the container invisible and inaccessible
+        containerAutoEquipStorage.Disable()
+        containerAutoEquipStorage.Lock()
+    endif
 endEvent
 
 ; This event is called when the player loads a game
@@ -265,7 +329,7 @@ bool Function CanRunCommands()
 endFunction
 
 bool Function RunCommands()
-    Debug.Trace("RunCommands()")
+    ; Debug.Trace("RunCommands()")
     
 	if player.IsDead() || !CanRunCommands()
         Debug.Trace("  can't run commands!")
@@ -274,7 +338,7 @@ bool Function RunCommands()
 	endif
     
     int commandCount = CrowdControlApi.GetCommandCount()
-    Debug.Trace("  commandCount=" + commandCount)
+    ; Debug.Trace("  commandCount=" + commandCount)
     
 	CrowdControlApi:CrowdControlCommand command = CrowdControlApi.GetCommand()
     
@@ -302,6 +366,7 @@ Struct ParsedCommand
     String command
     String id
     Int quantity
+    int duration
     String param0
     String param1
     String param2
@@ -323,7 +388,9 @@ ParsedCommand Function ParseCrowdControlCommand(CrowdControlApi:CrowdControlComm
     r.quantity = ccCommand.param1 as int
 
     if ccCommand.durationMS > 0
-        r.quantity = ccCommand.durationMS / 1000
+        r.duration = ccCommand.durationMS / 1000
+    else
+        r.duration = 0
     endif
     
     r.param0 = ccCommand.param2
@@ -407,17 +474,7 @@ Form Function FindForm(String id)
        
         return r
     else
-        int formId = id as int
-    
-        Form foundForm = Game.GetFormFromFile(formId, "Fallout4.esm") as Form
-        
-        if foundForm != None
-            return foundForm
-        endif
-        
-        Form r = Game.GetFormFromFile(formId, "CrowdControl.esp") as Form
-        
-        return r
+        return FindFormId(id as int)
     endif
 endFunction
 
@@ -517,17 +574,110 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
     string viewer = ccCommand.viewer
     string status
     int type = ccCommand.type
-   
-    if QuestMQ102.GetStage() < 10
-        status = viewer + ", cannot run effects at this time. The player must first exit Vault 111."
 
-		Respond(id, 1, status)
+    if command.command == "test"
+        Int lockCount = 25
+        Int itemCount = 25
+        CH.AddForceLockTier(1, lockCount * 4)
+        CH.AddForceLockTier(2, lockCount * 3)
+        CH.AddForceLockTier(3, lockCount * 2)
+        CH.AddForceLockTier(4, lockCount)
+        CH.AddItem(Game.GetFormFromFile(0x13570, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x13571, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x13573, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x13574, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x1357A, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x1357B, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x1357C, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x1357D, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x1357E, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x13584, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x13585, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x13586, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x13587, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x13588, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x13589, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x1358A, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x1358B, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x1BE4F, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x1BE50, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x1BE51, "CrowdControl.esp") as Form, itemCount)
+        CH.AddItem(Game.GetFormFromFile(0x1BE53, "CrowdControl.esp") as Form, itemCount)
+
+        Respond(id, 0, status)
         PrintMessage(status)
-        
-        return
-    endif
+
+    elseif command.command == "additem"
+        Form item = FindForm(command.id)
+
+        If CH.AddItem(item, 50)
+            Respond(id, 0, status)
+            PrintMessage(status)
+        Else
+            Respond(id, 1, status)
+            PrintMessage(status)
+        Endif
+
+    elseif command.command == "itemscare"
+        Form theForm = FindForm(command.id)
+		player.PlaceAtMe(theForm, command.quantity)
+        Respond(id, 0, status)
+        PrintMessage(status)
+    
+    elseif command.command == "scare"
+        Spell spl = FindForm(command.id) as Spell
+        spl.Cast(player)
+
+        Respond(id, 0, status)
+        PrintMessage(status)
+
+    elseif command.command == "stalker"
+        Form theForm = FindForm(command.id)
+
+        float maxDistance = 3000
+        float minDistance = 1500
+        If command.param3 != "" && command.param3 as float > 0
+            minDistance = command.param3 as float
+            maxDistance = minDistance * 5
+        EndIf
+
+        ; FIND
+        ObjectReference[] FoundMarkers = player.FindAllReferencesOfType(SpawnMarkers, maxDistance)
+        WorldSpace ThisWorldspace = player.GetWorldspace()
+        ObjectReference SpawnMarker = None
+        float fBenchmarkDistance = 0
+        int iIndex = 0
+        Debug.Trace("stalker found " + FoundMarkers.Length + " markers")
+        While (iIndex < FoundMarkers.length)
+            float fThisDistance = player.GetDistance(FoundMarkers[iIndex])
+            If (fThisDistance >= minDistance && fThisDistance <= maxDistance && FoundMarkers[iIndex].GetWorldspace() == ThisWorldspace && fThisDistance >= fBenchmarkDistance)
+                SpawnMarker = FoundMarkers[iIndex]
+                fBenchmarkDistance = fThisDistance
+            EndIf
+            iIndex += 1
+        EndWhile
+        If (SpawnMarker != None)
+            Int i = 0
+            while i < command.quantity
+                PingUpdateTimer()
+                ObjectReference spawnedActor = SpawnMarker.PlaceActorAtMe(theForm as ActorBase)
+                spawnedActor.SetAngle(0.0, spawnedActor.GetAngleY(), spawnedActor.GetAngleZ())
+                i += 1
+            EndWhile
+            PrintMessage(status)
+            Respond(id, 0, status)
+        Else
+            PrintMessage(status)
+            Respond(id, 1, status)
+        EndIf
+
+    else
+        Debug.Notification("Unknown command received: " + command.command)
+	endif
+
+    return
    
-	if command.command == "playeradditem"
+    if command.command == "playeradditem"
         Form theForm = FindForm(command.id)
 		player.AddItem(theForm, command.quantity, abSilent = true)
 
@@ -825,7 +975,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         ActorBase theActorBase
 
         float pushForce = 10.0
-        
+
         int i = 0
         while i < command.quantity
             PingUpdateTimer()

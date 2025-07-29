@@ -191,7 +191,6 @@ UInt32 ResolveModIndex(UInt32 modIndex)
 void Core_RevertCallback(const F4SESerializationInterface * intfc)
 {
 	g_inputKeyEventRegs.Clear();
-	g_inputGamepadButtonEventRegs.Clear();
 	g_inputControlEventRegs.Clear();
 	g_externalEventRegs.Clear();
 	g_cameraEventRegs.Clear();
@@ -222,10 +221,6 @@ void Core_SaveCallback(const F4SESerializationInterface * intfc)
 	_MESSAGE("Saving key input event registrations...");
 	g_inputKeyEventRegs.Save(intfc, 'KEYR', InternalEventVersion::kCurrentVersion);
 
-	_MESSAGE("Saving gamepad input event registrations...");
-	g_inputGamepadButtonEventRegs.Save(intfc, 'KEYG', InternalEventVersion::kCurrentVersion);
-
-
 	_MESSAGE("Saving control input event registrations...");
 	g_inputControlEventRegs.Save(intfc, 'CTLR', InternalEventVersion::kCurrentVersion);
 
@@ -238,10 +233,10 @@ void Core_SaveCallback(const F4SESerializationInterface * intfc)
 	_MESSAGE("Saving furniture event registrations...");
 	g_furnitureEventRegs.Save(intfc, 'FRNR', InternalEventVersion::kCurrentVersion);
 
-	_MESSAGE("Saving F4SEPersistentObjectStorage data...");
+	_MESSAGE("Saving SKSEPersistentObjectStorage data...");
 	SaveClassHelper(intfc, 'OBMG', F4SEObjectStorageInstance());
 
-	_MESSAGE("Saving F4SEDelayFunctorManager data...");
+	_MESSAGE("Saving SKSEDelayFunctorManager data...");
 	SaveClassHelper(intfc, 'DFMG', F4SEDelayFunctorManagerInstance());
 }
 
@@ -279,11 +274,6 @@ void Core_LoadCallback(const F4SESerializationInterface * intfc)
 			g_inputKeyEventRegs.Load(intfc, InternalEventVersion::kCurrentVersion);
 			break;
 
-		case 'KEYG':
-			_MESSAGE("Loading gamepad input event registrations...");
-			g_inputGamepadButtonEventRegs.Load(intfc, InternalEventVersion::kCurrentVersion);
-			break;
-
 			// Control input events
 		case 'CTLR':
 			_MESSAGE("Loading control input event registrations...");
@@ -308,13 +298,13 @@ void Core_LoadCallback(const F4SESerializationInterface * intfc)
 			g_furnitureEventRegs.Load(intfc, InternalEventVersion::kCurrentVersion);
 			break;
 
-			// F4SEPersistentObjectStorage
+			// SKSEPersistentObjectStorage
 		case 'OBMG':
 			_MESSAGE("Loading F4SEPersistentObjectStorage data...");
 			F4SEObjectStorageInstance().Load(intfc, version);
 			break;
 
-			// F4SEDelayFunctorManager
+			// SKSEDelayFunctorManager
 		case 'DFMG':
 			_MESSAGE("Loading F4SEDelayFunctorManager data...");
 			F4SEDelayFunctorManagerInstance().Load(intfc, version);

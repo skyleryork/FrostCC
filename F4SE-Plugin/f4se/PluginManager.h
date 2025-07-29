@@ -14,23 +14,14 @@ public:
 	PluginManager();
 	~PluginManager();
 
-	enum
-	{
-		kPhase_Preload = 0,
-		kPhase_Load,
-
-		kPhase_Num,
-	};
-
-	void	Init(void);
-	void	InstallPlugins(UInt32 phase);
-	void	LoadComplete();
+	bool	Init(void);
 	void	DeInit(void);
 
 	PluginInfo *	GetInfoByName(const char * name);
 	const char *	GetPluginNameFromHandle(PluginHandle handle);
 
 	PluginHandle	LookupHandleFromName(const char* pluginName);
+
 
 	UInt32			GetNumPlugins(void);
 
@@ -45,49 +36,31 @@ public:
 private:
 	struct LoadedPlugin
 	{
-		LoadedPlugin();
-
-		std::string dllName;
-
-		HMODULE		handle = 0;
+		// internals
+		HMODULE		handle;
 		PluginInfo	info;
-		UInt32		internalHandle = 0;
 
-		F4SEPluginVersionData	version;
-
-		_F4SEPlugin_Load	load[kPhase_Num] = { nullptr };
-
-		const char			* errorState = nullptr;
-		UInt32				errorCode = 0;
-
-		bool	hasLoad = false;
-		bool	hasPreload = false;
+		_F4SEPlugin_Query	query;
+		_F4SEPlugin_Load	load;
 	};
 
 	bool	FindPluginDirectory(void);
-	void	ScanPlugins(void);
+	void	InstallPlugins(void);
 
-	const char *	SafeCallLoadPlugin(LoadedPlugin * plugin, const F4SEInterface * f4se, UInt32 phase);
+	const char *	SafeCallQueryPlugin(LoadedPlugin * plugin, const F4SEInterface * f4se);
+	const char *	SafeCallLoadPlugin(LoadedPlugin * plugin, const F4SEInterface * f4se);
 
-	void			Sanitize(F4SEPluginVersionData * version);
-	const char *	CheckPluginCompatibility(const F4SEPluginVersionData & version);
-	const char *	CheckAddressLibrary(void);
-
-	void			LogPluginLoadError(const LoadedPlugin & plugin, const char * errStr, UInt32 errCode = 0, bool isError = true);
-	void			ReportPluginErrors();
-	void			UpdateAddressLibraryPrompt();
+	const char *	CheckPluginCompatibility(LoadedPlugin * plugin);
 
 	typedef std::vector <LoadedPlugin>	LoadedPluginList;
 
 	std::string			m_pluginDirectory;
 	LoadedPluginList	m_plugins;
 
-	LoadedPluginList	m_erroredPlugins;
-
-	bool				m_oldAddressLibrary = false;
-
 	static LoadedPlugin		* s_currentLoadingPlugin;
 	static PluginHandle		s_currentPluginHandle;
+
+	static bool s_hideTrampolineInterface;
 };
 
 // a non-owning, thread-safe allocator for a block of memory
