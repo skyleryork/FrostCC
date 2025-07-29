@@ -113,9 +113,9 @@ namespace CrowdControl.Games.Packs.Fallout4_Frost
 
 			#region Hostile NPCs
 
-			new Effect("Feral Ghouls (5)", $"spawnstalkers_{0x75337}_5_{hostileSpawnDistanceFar}_{hostileSpawnMaxDistance}") { Price = GetPrice(20), Category = "Spawn Hostile NPC" },
-			new Effect("Glowing Ones (3)", $"spawnstalkers_{0xD39EF}_3_{hostileSpawnDistanceFar}_{hostileSpawnMaxDistance}") { Price = GetPrice(25), Category = "Spawn Hostile NPC" },
-			new Effect("Maldenmen (2)", $"spawnstalkers_frost__{0x6B45F}_3_{hostileSpawnDistanceFar}_{hostileSpawnMaxDistance}") { Price = GetPrice(25), Category = "Spawn Hostile NPC" },
+			new Effect("Feral Ghouls (5)", $"spawnstalkers_{0x75337}_5_1500_3000") { Price = GetPrice(20), Category = "Spawn Hostile NPC" },
+			new Effect("Glowing Ones (3)", $"spawnstalkers_{0xD39EF}_3_1500_3000") { Price = GetPrice(25), Category = "Spawn Hostile NPC" },
+			new Effect("Maldenmen (2)", $"spawnstalkers_frost__{0x6B45F}_2_1500_3000") { Price = GetPrice(25), Category = "Spawn Hostile NPC" },
 
 			#endregion
 

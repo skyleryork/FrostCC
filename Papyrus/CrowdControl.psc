@@ -1,12 +1,10 @@
 ; Copyright (c) 2023 kmrkle.tv community. All rights reserved.
 ; Licensed under the MIT License. See LICENSE in the project root for license information.
-
 Scriptname CrowdControl extends ReferenceAlias
-
-FormList Property SpawnMarkers Auto Const
 
 Chance CH = None
 RadiationHotspotScript RadiationHotspot = None
+HostileSpawnScript HostileSpawn = None
 
 Int[] ItemDie = None
 Int[] ItemResults = None
@@ -25,19 +23,9 @@ Keyword keywordActorFriendlyNpc = None
 
 Int updateTimerId = 10
 Int updateTimerKeepAliveId = 11
-Int stalkerTimerId = 12
 float LastCellLoadAt = 0.0
 
 bool F4SEFound
-
-Struct Stalker
-    Form theForm
-    Int quantity
-    Float minDistance
-    Float maxDistance
-EndStruct
-
-Stalker pendingStalker = None
 
 Event OnInit()
     Debug.Trace("CrowdControl OnInit.")
@@ -96,6 +84,10 @@ Function InitVars()
 
     If RadiationHotspot == None
         RadiationHotspot = GetOwningQuest().GetAlias(0) as RadiationHotspotScript
+	Endif
+
+    If HostileSpawn == None
+        HostileSpawn = GetOwningQuest().GetAlias(0) as HostileSpawnScript
 	Endif
 EndFunction
 
@@ -191,12 +183,6 @@ Event OnTimer(Int aiTimerID)
             
             StartTimer(1, updateTimerId)
         endif
-    elseif aiTimerID == stalkerTimerId
-        If AttemptSpawnStalker()
-            pendingStalker = None
-        Else
-            StartTimer(1.0, stalkerTimerId)
-        EndIf
    EndIf
 EndEvent
 
@@ -439,40 +425,6 @@ Function AttachMod(ObjectReference spawnedItem, string modFormId)
     endif
 endfunction
 
-Bool Function AttemptSpawnStalker()
-    If pendingStalker != None
-        WorldSpace thisWorldspace = player.GetWorldspace()
-        ObjectReference[] markers = player.FindAllReferencesOfType(SpawnMarkers, pendingStalker.maxDistance)
-        
-        ObjectReference[] foundMarkers = new ObjectReference[4]
-        Int numFoundMarkers = 0
-        int i = 0
-        While i < markers.Length
-            float distance = player.GetDistance(markers[i])
-            If distance >= pendingStalker.minDistance && distance <= pendingStalker.maxDistance && markers[i].GetWorldspace() == thisWorldspace && !player.HasDetectionLOS(markers[i])
-                foundMarkers[numFoundMarkers] = markers[i]
-                numFoundMarkers += 1
-                If numFoundMarkers == foundMarkers.Length
-                    i = markers.Length
-                EndIf
-            EndIf
-            i += 1
-        EndWhile
-        If numFoundMarkers
-            ObjectReference foundMarker = foundMarkers[Utility.RandomInt(0, numFoundMarkers - 1)]
-            i = 0
-            while i < pendingStalker.quantity
-                PingUpdateTimer()
-                ObjectReference spawnedActor = foundMarker.PlaceAtMe(pendingStalker.theForm)
-                spawnedActor.SetAngle(0.0, spawnedActor.GetAngleY(), spawnedActor.GetAngleZ())
-                i += 1
-            EndWhile
-            return True
-        EndIf
-    EndIf
-    return False
-EndFunction
-
 Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
     ParsedCommand command = ParseCrowdControlCommand(ccCommand)
    
@@ -536,25 +488,20 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         PrintMessage(status)
 
     elseif command.command == "spawnstalkers"
-        if pendingStalker != None
+        SafeSpawnBaseScript:SpawnData data = new SafeSpawnBaseScript:SpawnData
+        data.theForm = FindForm(command.id)
+        data.quantity = command.quantity
+        data.minDistance = command.param0 as Float
+        data.maxDistance = command.param1 as Float
+
+        if !HostileSpawn.QueueSpawn(data)
+            status = viewer + ", too many hostile spawns pending"
             PrintMessage(status)
             Respond(id, 1, status)
-        EndIf
-
-        pendingStalker = new Stalker
-        pendingStalker.theForm = FindForm(command.id)
-        pendingStalker.quantity = command.quantity
-        pendingStalker.minDistance = command.param0 as Float
-        pendingStalker.maxDistance = command.param1 as Float
-
-        If AttemptSpawnStalker()
-            pendingStalker = None
         Else
-            StartTimer(1.0, stalkerTimerId)
+            PrintMessage(status)
+            Respond(id, 0, status)
         EndIf
-
-        PrintMessage(status)
-        Respond(id, 0, status)
 
     elseif command.command == "test"
         Int lockCount = 25

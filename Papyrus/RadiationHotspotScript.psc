@@ -10,12 +10,7 @@ Float Property SmallHotspotSpacing Auto Const Mandatory
 Float Property MediumHotspotSpacing Auto Const Mandatory
 Float Property LargeHotspotSpacing Auto Const Mandatory
 
-ReferenceAlias Property SpawnMarkerRef Auto Mandatory
-
-
-Event OnInit()
-
-EndEvent
+ReferenceAlias Property SpawnMarkerRef Auto Const Mandatory
 
 
 Bool Function SpawnHotspot(Int tier, ObjectReference target)
