@@ -8,55 +8,122 @@ using System.Collections.Generic;
 
 namespace CrowdControl.Games.Packs.Fallout4_Frost
 {
-    public class Fallout4_Frost : SimpleTCPPack<SimpleTCPServerConnector>
+	public class Fallout4_Frost : SimpleTCPPack<SimpleTCPServerConnector>
 	{
-        public override string Host => "127.0.0.1";
-         
-        public override ushort Port => 5420;
+		public override string Host => "127.0.0.1";
 
-        public Fallout4_Frost(UserRecord player, Func<CrowdControlBlock, bool> responseHandler, Action<object> statusUpdateHandler) 
-            : base(player, responseHandler, statusUpdateHandler)
-        {
-        }
+		public override ushort Port => 5420;
 
-        public override Game Game { get; } = new Game("Fallout 4: Frost", "Fallout4_Frost", "PC", ConnectorType.SimpleTCPServerConnector);
+		public Fallout4_Frost(UserRecord player, Func<CrowdControlBlock, bool> responseHandler, Action<object> statusUpdateHandler)
+			: base(player, responseHandler, statusUpdateHandler)
+		{
+		}
 
-        private uint? priceOverride = null;
-        private double priceScale = 1.0;
+		public override Game Game { get; } = new Game("Fallout 4: Frost", "Fallout4_Frost", "PC", ConnectorType.SimpleTCPServerConnector);
 
-        private uint? neutralSpawnDistance = 200;
-        private uint? hostileSpawnDistance = 500;
-        private uint? hostileSpawnDistanceFar = 1000;
-        private uint? hostileSpawnDistanceSwarm = 1500;
+		private uint? priceOverride = null;
+		private double priceScale = 1.0;
 
-        private uint GetPrice(int basePrice)
-        {
-            return priceOverride ?? (uint)(basePrice * priceScale);
-        }
+		private uint? neutralSpawnDistance = 200;
+		private uint? hostileSpawnDistance = 500;
+		private uint? hostileSpawnDistanceFar = 1000;
+		private uint? hostileSpawnDistanceSwarm = 1500;
+		private uint? hostileSpawnMaxDistance = 2000;
 
-        public override EffectList Effects => new[]
-        {
-			new Effect("Dud Mine", $"scare__{0x1BE55}_1") { Price = GetPrice(5), Category = "Help" },
+		private uint GetPrice(int basePrice)
+		{
+			return priceOverride ?? (uint)(basePrice * priceScale);
+		}
+
+		public override EffectList Effects => new[]
+		{
+            #region Locks
+
+            new Effect("Add Novice Lock (1)", $"addlock_1_1") { Price = GetPrice(1), Category = "Locks" },
+			new Effect("Add Advanced Lock (1)", $"addlock_2_1") { Price = GetPrice(5), Category = "Locks" },
+			new Effect("Add Expert Lock (1)", $"addlock_3_1") { Price = GetPrice(10), Category = "Locks" },
+			new Effect("Add Master Lock (1)", $"addlock_4_1") { Price = GetPrice(25), Category = "Locks" },
+
+			new Effect("Remove Novice Lock (1)", $"addunlock_1_1") { Price = GetPrice(1), Category = "Locks" },
+			new Effect("Remove Advanced Lock (1)", $"addunlock_2_1") { Price = GetPrice(5), Category = "Locks" },
+			new Effect("Remove Expert Lock (1)", $"addunlock_3_1") { Price = GetPrice(10), Category = "Locks" },
+			new Effect("Remove Master Lock (1)", $"addunlock_4_1") { Price = GetPrice(25), Category = "Locks" },
+
+			#endregion
+
+			#region Items (Junk)
+
+			new Effect("Give Junk Scrap (1)", $"additem_crowdcontrol__{0x1357E}") { Price = GetPrice(5), Category = "Junk Items" },
+			new Effect("Give Junk Tools (1)", $"additem_crowdcontrol__{0x1BE53}") { Price = GetPrice(5), Category = "Junk Items" },
+
+			#endregion
+
+			#region Items (Common)
+
+			new Effect("Give Common Tools (1)", $"additem_crowdcontrol__{0x1BE4F}") { Price = GetPrice(5), Category = "Common Items" },
+			new Effect("Give Common Food (1)", $"additem_crowdcontrol__{0x13584}") { Price = GetPrice(5), Category = "Common Items" },
+			new Effect("Give Common Chems (1)", $"additem_crowdcontrol__{0x1357D}") { Price = GetPrice(5), Category = "Common Items" },
+			new Effect("Give Common Ammo (1)", $"additem_crowdcontrol__{0x13588}") { Price = GetPrice(5), Category = "Common Items" },
+			new Effect("Give Common Valuables (1)", $"additem_crowdcontrol__{0x1357C}") { Price = GetPrice(5), Category = "Common Items" },
+
+			#endregion
+
+			#region Items (Rare)
+
+			new Effect("Give Rare Tools (1)", $"additem_crowdcontrol__{0x1BE50}") { Price = GetPrice(5), Category = "Rare Items" },
+			new Effect("Give Rare Food (1)", $"additem_crowdcontrol__{0x13585}") { Price = GetPrice(5), Category = "Rare Items" },
+			new Effect("Give Rare Chems (1)", $"additem_crowdcontrol__{0x13570}") { Price = GetPrice(5), Category = "Rare Items" },
+			new Effect("Give Rare Ammo (1)", $"additem_crowdcontrol__{0x13589}") { Price = GetPrice(5), Category = "Rare Items" },
+			new Effect("Give Rare Valuables (1)", $"additem_crowdcontrol__{0x13573}") { Price = GetPrice(5), Category = "Rare Items" },
+
+			#endregion
+
+			#region Items (Epic)
+
+			new Effect("Give Epic Tools (1)", $"additem_crowdcontrol__{0x1BE51}") { Price = GetPrice(5), Category = "Epic Items" },
+			new Effect("Give Epic Food (1)", $"additem_crowdcontrol__{0x13586}") { Price = GetPrice(5), Category = "Epic Items" },
+			new Effect("Give Epic Chems (1)", $"additem_crowdcontrol__{0x13571}") { Price = GetPrice(5), Category = "Epic Items" },
+			new Effect("Give Epic Ammo (1)", $"additem_crowdcontrol__{0x1358A}") { Price = GetPrice(5), Category = "Epic Items" },
+			new Effect("Give Epic Valuables (1)", $"additem_crowdcontrol__{0x13574}") { Price = GetPrice(5), Category = "Epic Items" },
+
+			#endregion
+
+			#region Items (Legendary)
+
+			new Effect("Give Legendary Food (1)", $"additem_crowdcontrol__{0x13587}") { Price = GetPrice(5), Category = "Legendary Items" },
+			new Effect("Give Legendary Chems (1)", $"additem_crowdcontrol__{0x1357B}") { Price = GetPrice(5), Category = "Legendary Items" },
+			new Effect("Give Legendary Ammo (1)", $"additem_crowdcontrol__{0x1358B}") { Price = GetPrice(5), Category = "Legendary Items" },
+			new Effect("Give Legendary Valuables (1)", $"additem_crowdcontrol__{0x1357A}") { Price = GetPrice(5), Category = "Legendary Items" },
+
+			#endregion
+
+			#region Scares
 
 			new Effect("Frag Mine Scare", $"itemscare_crowdcontrol__{0x1BE6E}_1") { Price = GetPrice(5), Category = "Scares" },
 
-			new Effect("Rare Health Item", $"additem_crowdcontrol__{0x13570}") { Price = GetPrice(5), Category = "Items" },
-			new Effect("Rare Money Item", $"additem_crowdcontrol__{0x13573}") { Price = GetPrice(5), Category = "Items" },
+			#endregion
 
-			new Effect("Epic Health Item", $"additem_crowdcontrol__{0x13571}") { Price = GetPrice(10), Category = "Items" },
-			new Effect("Epic Money Item", $"additem_crowdcontrol__{0x13574}") { Price = GetPrice(10), Category = "Items" },
+			#region Radiation
 
-			new Effect("Legendary Health Item", $"additem_crowdcontrol__{0x1357B}") { Price = GetPrice(20), Category = "Items" },
-			new Effect("Legendary Money Item", $"additem_crowdcontrol__{0x1357A}") { Price = GetPrice(20), Category = "Items" },
+			new Effect("Small Hotspot", $"addradiation_0") { Price = GetPrice(5), Category = "Radiation" },
+			new Effect("Medium Hotspot", $"addradiation_1") { Price = GetPrice(5), Category = "Radiation" },
+			new Effect("Large Hotspot", $"addradiation_2") { Price = GetPrice(5), Category = "Radiation" },
 
-			new Effect("Junk Item", $"additem_crowdcontrol__{0x1357E}") { Price = GetPrice(1), Category = "Items" },
+			#endregion
 
-			new Effect("Increase Locks", $"increaselock") { Price = GetPrice(5), Category = "Locks" },
-			new Effect("Decrease Locks", $"decreaselock") { Price = GetPrice(5), Category = "Locks" },
+			#region Hostile NPCs
+
+			new Effect("Feral Ghouls (5)", $"spawnstalkers_{0x75337}_5_{hostileSpawnDistanceFar}_{hostileSpawnMaxDistance}") { Price = GetPrice(20), Category = "Spawn Hostile NPC" },
+			new Effect("Glowing Ones (3)", $"spawnstalkers_{0xD39EF}_3_{hostileSpawnDistanceFar}_{hostileSpawnMaxDistance}") { Price = GetPrice(25), Category = "Spawn Hostile NPC" },
+			new Effect("Maldenmen (2)", $"spawnstalkers_frost__{0x6B45F}_3_{hostileSpawnDistanceFar}_{hostileSpawnMaxDistance}") { Price = GetPrice(25), Category = "Spawn Hostile NPC" },
+
+			#endregion
+
+			#region TEST
 
 			new Effect("TEST", $"test") { Price = GetPrice(1), Category = "TEST" },
 
-			new Effect("Glowing Ones (3)", $"stalker_866799_3_0_0_0_{hostileSpawnDistanceFar}") { Price = GetPrice(40), Category = "Spawn Hostile NPC" },
+			#endregion
 		};
-    }
+	}
 }

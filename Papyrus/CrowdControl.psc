@@ -6,6 +6,7 @@ Scriptname CrowdControl extends ReferenceAlias
 FormList Property SpawnMarkers Auto Const
 
 Chance CH = None
+RadiationHotspotScript RadiationHotspot = None
 
 Int[] ItemDie = None
 Int[] ItemResults = None
@@ -16,34 +17,36 @@ string lastState = ""
 Int lastCommandId = -1
 Int lastCommandType = -1
 
-InputEnableLayer inputControl
 Actor player = None
 Faction playerFaction = None
 Faction playerEnemyFaction = None
 Faction playerAllyFaction = None
-Form launchMarker = None
 Keyword keywordActorFriendlyNpc = None
-GlobalVariable GameHour = None
-ObjectReference containerAutoEquipStorage
 
 Int updateTimerId = 10
 Int updateTimerKeepAliveId = 11
+Int stalkerTimerId = 12
 float LastCellLoadAt = 0.0
 
 bool F4SEFound
 
+Struct Stalker
+    Form theForm
+    Int quantity
+    Float minDistance
+    Float maxDistance
+EndStruct
+
+Stalker pendingStalker = None
+
 Event OnInit()
     Debug.Trace("CrowdControl OnInit.")
 
-    activeCooldowns = new ActiveCooldown[0]
-    followerStates = new FollowerState[0]
 	lastCommandId = -1
 	lastCommandType = -1
     lastState = ""
-    toEquipCount = 0
     isPlayerInWorkshop = false
    
-    inputControl = InputEnableLayer.Create()
     player = Game.GetPlayer()
     InitVars()
    
@@ -60,10 +63,6 @@ Event OnInit()
 EndEvent
 
 Function InitVars()
-    if launchMarker == None
-		launchMarker = FindFormId(0x00000034)
-	endif
-    
     if playerFaction == None
         playerFaction = Game.GetFormFromFile(0x1C21C, "Fallout4.esm") as Faction
     endif
@@ -78,10 +77,6 @@ Function InitVars()
     
     if keywordActorFriendlyNpc == None
         keywordActorFriendlyNpc = Game.GetFormFromFile(0x10053FF, "CrowdControl.esp") as Keyword
-    endif
-    
-    if GameHour == None
-        GameHour = Game.GetFormFromFile(0x38, "Fallout4.esm") as GlobalVariable
     endif
     
     ; Get rid of Billy
@@ -99,76 +94,13 @@ Function InitVars()
         CH = GetOwningQuest().GetAlias(0) as Chance
 	Endif
 
-    ; Chance
-    ; if ItemDie == None
-    ;     ItemDie = Chance.InitDie()
-    ;     ItemResults = Chance.InitResults(Game.GetFormFromFile(0x1356D, "CrowdControl.esp") as FormList)
-    ;     ItemRolls = Chance.InitRolls(ItemDie, ItemResults)
-
-    ;     Debug.Trace("Init - ItemDie: " + ItemDie)
-    ;     Debug.Trace("Init - ItemResults: " + ItemResults)
-    ;     Debug.Trace("Init - ItemRolls: " + ItemRolls)
-    ; EndIf
+    If RadiationHotspot == None
+        RadiationHotspot = GetOwningQuest().GetAlias(0) as RadiationHotspotScript
+	Endif
 EndFunction
-
-; Form Function RollItem(Form[] items)
-;     Debug.Trace("RollItem - ItemDie: " + ItemDie)
-;     Debug.Trace("RollItem - ItemResults: " + ItemResults)
-;     Debug.Trace("RollItem - ItemRolls: " + ItemRolls)
-
-;     ; Shuffle
-;     Int[] indices = new Int[items.Length]
-;     Int i = 0
-;     While i < indices.Length
-;         indices[i] = i
-;         i += 1
-;     EndWhile
-
-;     i = 0
-;     While i < ( indices.Length - 1 )
-;         Int j = Utility.RandomInt(i, indices.Length - 1)
-;         If i != j
-;             Int tmp = indices[i]
-;             indices[i] = indices[j]
-;             indices[j] = tmp
-;         EndIf
-;         i += 1
-;     EndWhile
-
-;     ; Roll
-;     i = 0
-;     While i < indices.Length
-;         Form item = items[indices[i]]
-;         If Chance.Roll(ItemDie, ItemResults, ItemRolls, item.GetFormID())
-;             return item
-;         EndIf
-;         i += 1
-;     EndWhile
-
-;     return None
-; EndFunction
-
-; Form Function RollItemFormList(FormList list)
-;     Form[] forms = new Form[list.GetSize()]
-;     Int i = 0
-;     While i < list.GetSize()
-;         forms[i] = list.GetAt(i)
-;         i += 1
-;     EndWhile
-;     return RollItem(forms)
-; EndFunction
 
 Event OnCellLoad()
     LastCellLoadAt = Utility.GetCurrentRealTime()
-
-    if containerAutoEquipStorage == None
-        ; Create a new container object
-        containerAutoEquipStorage = player.PlaceAtMe(Game.GetFormFromFile(0x6AD6, "CrowdControl.esp"))
-        
-        ; Make the container invisible and inaccessible
-        containerAutoEquipStorage.Disable()
-        containerAutoEquipStorage.Lock()
-    endif
 endEvent
 
 ; This event is called when the player loads a game
@@ -176,28 +108,14 @@ Event OnPlayerLoadGame()
     InitVars()   
     
     ; Reset all state
-    activeCooldowns = new ActiveCooldown[0]
     lastCommandId = -1
 	lastCommandType = -1
     lastState = ""
-    toEquipCount = 0
     isPlayerInWorkshop = false
    
-    if followerStates == None
-        followerStates = new FollowerState[0]
-    endif
-    
     ; Clear all effect timers, in case player died or reloaded.
 	CrowdControlApi.ClearTimers()
    
-    ; Reset state
-    inputControl.EnableSprinting(true)
-    inputControl.EnableJumping(true)
-    inputControl.EnableRunning(true)
-    inputControl.EnableVATS(true)
-    inputControl.EnableMenu(true)
-    inputControl.EnableFastTravel(true)
-    
     ; Start new timers
     CancelTimer(updateTimerId)
     CancelTimer(updateTimerKeepAliveId)
@@ -273,6 +191,12 @@ Event OnTimer(Int aiTimerID)
             
             StartTimer(1, updateTimerId)
         endif
+    elseif aiTimerID == stalkerTimerId
+        If AttemptSpawnStalker()
+            pendingStalker = None
+        Else
+            StartTimer(1.0, stalkerTimerId)
+        EndIf
    EndIf
 EndEvent
 
@@ -329,8 +253,6 @@ bool Function CanRunCommands()
 endFunction
 
 bool Function RunCommands()
-    ; Debug.Trace("RunCommands()")
-    
 	if player.IsDead() || !CanRunCommands()
         Debug.Trace("  can't run commands!")
         
@@ -338,7 +260,6 @@ bool Function RunCommands()
 	endif
     
     int commandCount = CrowdControlApi.GetCommandCount()
-    ; Debug.Trace("  commandCount=" + commandCount)
     
 	CrowdControlApi:CrowdControlCommand command = CrowdControlApi.GetCommand()
     
@@ -403,12 +324,6 @@ ParsedCommand Function ParseCrowdControlCommand(CrowdControlApi:CrowdControlComm
     r.param7 = ccCommand.param9
     r.param8 = ccCommand.param10
     r.param9 = ccCommand.param11
-   
-    Debug.Trace("CC Command: " + ccCommand.id)
-    Debug.Trace("  command: " + r.command)
-    Debug.Trace("  id: " + r.id)
-    Debug.Trace("  quantity: " + r.quantity)
-    Debug.Trace("  params: " + r.param0 + ", " + r.param1 + ", " + r.param2 + ", " + r.param3 + ", " + r.param4 + ", " + r.param5 + ", " + r.param6 + ", " + r.param7 + ", " + r.param8 + ", " + r.param9)
 
     return r
 endfunction
@@ -452,6 +367,8 @@ string Function NormalizeDataFileName(string fileName)
 		return "DLCCoast.esm"
 	elseif fileName == "dlcnukaworld"
 		return "DLCNukaWorld.esm"
+    elseif fileName == "frost"
+		return "FROST.esp"
 	elseif fileName == "crowdcontrol"
 		return "CrowdControl.esp"
 	endif
@@ -477,46 +394,6 @@ Form Function FindForm(String id)
         return FindFormId(id as int)
     endif
 endFunction
-
-int toEquipCount = 0
-
-Event OnItemAdded(Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akSourceContainer)
-    if aiItemCount == 1 && toEquipCount > 0
-        player.EquipItem(akBaseItem, abSilent = true)
-        PlayerInventoryRestore()
-        toEquipCount -= 1
-        
-        if toEquipCount == 0
-            RemoveAllInventoryEventFilters()
-        endif
-    endif
-endEvent
-
-Function PlayerInventoryRestore()
-    containerAutoEquipStorage.RemoveAllItems(player)
-endfunction
-
-Function PlayerInventoryRemoveAllItems(Form akBaseItem, bool moveToTempStorage = false)
-    int itemCount = player.GetItemCount(akBaseItem)
-
-    while itemCount > 0
-        if moveToTempStorage
-            player.RemoveItem(akBaseItem, 1, true, containerAutoEquipStorage)
-        else
-            player.RemoveItem(akBaseItem, 1, true)
-        endif
-        
-        itemCount -= 1
-    endWhile
-endfunction
-
-Function AutoEquipAddedItem()
-    if toEquipCount == 0
-        AddInventoryEventFilter(None)
-    endif
-
-    toEquipCount += 1
-EndFunction
 
 Function StopFriendlyCombatWith(Actor theActor)
     ObjectReference[] kActors = player.FindAllReferencesWithKeyword(keywordActorFriendlyNpc, 2048.0)
@@ -562,6 +439,40 @@ Function AttachMod(ObjectReference spawnedItem, string modFormId)
     endif
 endfunction
 
+Bool Function AttemptSpawnStalker()
+    If pendingStalker != None
+        WorldSpace thisWorldspace = player.GetWorldspace()
+        ObjectReference[] markers = player.FindAllReferencesOfType(SpawnMarkers, pendingStalker.maxDistance)
+        
+        ObjectReference[] foundMarkers = new ObjectReference[4]
+        Int numFoundMarkers = 0
+        int i = 0
+        While i < markers.Length
+            float distance = player.GetDistance(markers[i])
+            If distance >= pendingStalker.minDistance && distance <= pendingStalker.maxDistance && markers[i].GetWorldspace() == thisWorldspace && !player.HasDetectionLOS(markers[i])
+                foundMarkers[numFoundMarkers] = markers[i]
+                numFoundMarkers += 1
+                If numFoundMarkers == foundMarkers.Length
+                    i = markers.Length
+                EndIf
+            EndIf
+            i += 1
+        EndWhile
+        If numFoundMarkers
+            ObjectReference foundMarker = foundMarkers[Utility.RandomInt(0, numFoundMarkers - 1)]
+            i = 0
+            while i < pendingStalker.quantity
+                PingUpdateTimer()
+                ObjectReference spawnedActor = foundMarker.PlaceAtMe(pendingStalker.theForm)
+                spawnedActor.SetAngle(0.0, spawnedActor.GetAngleY(), spawnedActor.GetAngleZ())
+                i += 1
+            EndWhile
+            return True
+        EndIf
+    EndIf
+    return False
+EndFunction
+
 Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
     ParsedCommand command = ParseCrowdControlCommand(ccCommand)
    
@@ -575,7 +486,77 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
     string status
     int type = ccCommand.type
 
-    if command.command == "test"
+    If command.command == "addlock"
+        If CH.AddForceLockTier(command.id as Int, command.quantity)
+            PrintMessage(status)
+            Respond(id, 0, status)
+        Else
+            PrintMessage(status)
+            Respond(id, 1, status)
+        EndIf
+
+    ElseIf command.command == "addunlock"
+        If CH.AddForceUnlockTier(command.id as Int, command.quantity)
+            PrintMessage(status)
+            Respond(id, 0, status)
+        Else
+            PrintMessage(status)
+            Respond(id, 1, status)
+        EndIf
+
+    elseif command.command == "additem"
+        If CH.AddItem(FindForm(command.id), command.quantity)
+            Respond(id, 0, status)
+            PrintMessage(status)
+        Else
+            Respond(id, 1, status)
+            PrintMessage(status)
+        Endif
+
+    elseif command.command == "itemscare"
+		player.PlaceAtMe(FindForm(command.id), command.quantity)
+        Respond(id, 0, status)
+        PrintMessage(status)
+
+    elseif command.command == "addradiation"
+        If RadiationHotspot.SpawnHotspot(command.id as Int, player)
+            Respond(id, 0, status)
+            PrintMessage(status)
+        Else
+            status = viewer + ", too close to other radiation hotspots"
+
+            Respond(id, 1, status)
+            PrintMessage(status)
+        EndIf
+    
+    elseif command.command == "spellscare"
+        (FindForm(command.id) as Spell).Cast(player)
+
+        Respond(id, 0, status)
+        PrintMessage(status)
+
+    elseif command.command == "spawnstalkers"
+        if pendingStalker != None
+            PrintMessage(status)
+            Respond(id, 1, status)
+        EndIf
+
+        pendingStalker = new Stalker
+        pendingStalker.theForm = FindForm(command.id)
+        pendingStalker.quantity = command.quantity
+        pendingStalker.minDistance = command.param0 as Float
+        pendingStalker.maxDistance = command.param1 as Float
+
+        If AttemptSpawnStalker()
+            pendingStalker = None
+        Else
+            StartTimer(1.0, stalkerTimerId)
+        EndIf
+
+        PrintMessage(status)
+        Respond(id, 0, status)
+
+    elseif command.command == "test"
         Int lockCount = 25
         Int itemCount = 25
         CH.AddForceLockTier(1, lockCount * 4)
@@ -606,642 +587,6 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
 
         Respond(id, 0, status)
         PrintMessage(status)
-
-    elseif command.command == "additem"
-        Form item = FindForm(command.id)
-
-        If CH.AddItem(item, 50)
-            Respond(id, 0, status)
-            PrintMessage(status)
-        Else
-            Respond(id, 1, status)
-            PrintMessage(status)
-        Endif
-
-    elseif command.command == "itemscare"
-        Form theForm = FindForm(command.id)
-		player.PlaceAtMe(theForm, command.quantity)
-        Respond(id, 0, status)
-        PrintMessage(status)
-    
-    elseif command.command == "scare"
-        Spell spl = FindForm(command.id) as Spell
-        spl.Cast(player)
-
-        Respond(id, 0, status)
-        PrintMessage(status)
-
-    elseif command.command == "stalker"
-        Form theForm = FindForm(command.id)
-
-        float maxDistance = 3000
-        float minDistance = 1500
-        If command.param3 != "" && command.param3 as float > 0
-            minDistance = command.param3 as float
-            maxDistance = minDistance * 5
-        EndIf
-
-        ; FIND
-        ObjectReference[] FoundMarkers = player.FindAllReferencesOfType(SpawnMarkers, maxDistance)
-        WorldSpace ThisWorldspace = player.GetWorldspace()
-        ObjectReference SpawnMarker = None
-        float fBenchmarkDistance = 0
-        int iIndex = 0
-        Debug.Trace("stalker found " + FoundMarkers.Length + " markers")
-        While (iIndex < FoundMarkers.length)
-            float fThisDistance = player.GetDistance(FoundMarkers[iIndex])
-            If (fThisDistance >= minDistance && fThisDistance <= maxDistance && FoundMarkers[iIndex].GetWorldspace() == ThisWorldspace && fThisDistance >= fBenchmarkDistance)
-                SpawnMarker = FoundMarkers[iIndex]
-                fBenchmarkDistance = fThisDistance
-            EndIf
-            iIndex += 1
-        EndWhile
-        If (SpawnMarker != None)
-            Int i = 0
-            while i < command.quantity
-                PingUpdateTimer()
-                ObjectReference spawnedActor = SpawnMarker.PlaceActorAtMe(theForm as ActorBase)
-                spawnedActor.SetAngle(0.0, spawnedActor.GetAngleY(), spawnedActor.GetAngleZ())
-                i += 1
-            EndWhile
-            PrintMessage(status)
-            Respond(id, 0, status)
-        Else
-            PrintMessage(status)
-            Respond(id, 1, status)
-        EndIf
-
-    else
-        Debug.Notification("Unknown command received: " + command.command)
-	endif
-
-    return
-   
-    if command.command == "playeradditem"
-        Form theForm = FindForm(command.id)
-		player.AddItem(theForm, command.quantity, abSilent = true)
-
-        status = viewer + " gave you: " + CrowdControlApi.GetName(command.id) + " (" + command.quantity + ")"
-
-		Respond(id, 0, status)
-        PrintMessage(status)
-       
-    elseif command.command == "placeatme"
-        Form theForm = FindForm(command.id)
-       
-        if command.quantity <= 0
-            status = "Command 'placeatme' quantity must be > 0"
-            
-            Debug.Trace(status, 1)
-            Respond(id, 1, status)
-            
-            return
-        endif
-        
-        int i = 0
-        while i < command.quantity
-            PingUpdateTimer()
-            
-            ObjectReference spawnedItem = player.PlaceAtMe(theForm)
-            
-            spawnedItem.SetAngle(0.0, spawnedItem.GetAngleY(), spawnedItem.GetAngleZ())
-          
-            if command.param1 != "" && command.param1 as int > 0
-                spawnedItem.setScale(command.param1 as int)
-            endif   
-            
-            ; Make the item fly away from the player with a given force
-            if command.Param0 != "" && command.Param0 as int > 0
-                ; Define the maximum and minimum distance for the spawned items
-                float maxDistance = 50
-                float minDistance = 10
-
-                float randomAngle
-                ; Check if the player is in first person view
-                bool isPlayerInFirstPerson = player.GetAnimationVariableBool("IsFirstPerson")
-                if isPlayerInFirstPerson
-                    ; If in first person, align the random angle with the player's facing angle
-                    float playerAngle = GetPlayerAngle()
-                    randomAngle = playerAngle + ((Utility.RandomFloat() * 90.0) - 45.0)
-                else
-                    ; If in third person, use a completely random angle
-                    randomAngle = Utility.RandomFloat() * 360.0
-                endif
-
-                ; Calculate a random distance within the defined range
-                float randomDistance = minDistance + Utility.RandomFloat() * (maxDistance - minDistance)
-
-                ; Calculate the offset position for the spawned item using the random angle and distance
-                float offsetX = Math.Cos(randomAngle) * randomDistance
-                float offsetY = Math.Sin(randomAngle) * randomDistance
-
-                ; Move the spawned item to the offset position relative to the player
-                spawnedItem.MoveTo(player, offsetX, offsetY, Utility.RandomFloat(50.0, 100.0), false)
-                            
-                ; Create a random direction for the impulse
-                float xDirection = Math.Cos(randomAngle)
-                float yDirection = Math.Sin(randomAngle)
-                float zDirection = Utility.RandomFloat(2.0, 5.0)  ; make this greater than the magnitude of x and y
-
-                ; Apply the impulse to the spawned item
-                spawnedItem.ApplyHavokImpulse(xDirection, yDirection, zDirection, command.Param0 as float)
-                
-                ; Play a "plooop" sound
-                PlaySound(0x20A0B9)
-            endif
-
-            if i == 0
-                status = viewer + " gave you: " + CrowdControlApi.GetName(command.id) + " (" + command.quantity + ")"
-
-                Respond(id, 0, status)
-                PrintMessage(status)
-            endif
-            
-            i += 1
-        endwhile
-        
-    elseif command.command == "playergiveweapon"
-        ; Add weapon
-        Form theForm = FindForm(command.id)
-        Form theActualForm = theForm
-        
-        if command.param1 != "" && command.param1 as int > 0
-            theActualForm = FindForm(command.param1)
-        endif
-       
-        ObjectReference spawnedWeapon = player.PlaceAtMe(theForm)
-
-        if command.param2 != "" && command.param2 as int > 0
-            AttachMod(spawnedWeapon, command.param2)
-        endif
-        
-        if command.param3 != "" && command.param3 as int > 0
-            AttachMod(spawnedWeapon, command.param3)
-        endif
-        
-        if command.param4 != "" && command.param4 as int > 0
-            AttachMod(spawnedWeapon, command.param4)
-        endif
-        
-        if command.param5 != "" && command.param5 as int > 0
-            AttachMod(spawnedWeapon, command.param5)
-        endif
-        
-        if command.param6 != "" && command.param6 as int > 0
-            AttachMod(spawnedWeapon, command.param6)
-        endif
-        
-        if command.param7 != "" && command.param7 as int > 0
-            AttachMod(spawnedWeapon, command.param7)
-        endif
-        
-        if command.param8 != "" && command.param8 as int > 0
-            AttachMod(spawnedWeapon, command.param8)
-        endif
-        
-        if command.param9 != "" && command.param9 as int > 0
-            AttachMod(spawnedWeapon, command.param9)
-        endif
-        
-        Form baseObject = spawnedWeapon.GetBaseObject()
-        
-        PlayerInventoryRemoveAllItems(baseObject, true)
-        AutoEquipAddedItem()
-        player.AddItem(spawnedWeapon, 1, abSilent = true)
-        player.DrawWeapon()
-
-        status = viewer + " equipped you with: " + CrowdControlApi.GetName(command.id) + " (" + command.quantity + " ammo)"
-        
-		Respond(id, 0, status)
-        PrintMessage(status)
-        
-        ; Add ammo
-        if command.Param0 as int > 0
-            theForm = FindForm(command.Param0)
-            player.AddItem(theForm, command.quantity, abSilent = true)
-        endif
-        
-    elseif command.command == "playergiveweapon2"
-        ; Add weapon
-        Form theForm = FindForm(command.id)
-       
-        ObjectReference spawnedWeapon = player.PlaceAtMe(theForm)
-
-        if command.param1 != ""
-            AttachMod(spawnedWeapon, command.param1)
-        endif
-        
-        if command.param2 != ""
-            AttachMod(spawnedWeapon, command.param2)
-        endif
-        
-        if command.param3 != ""
-            AttachMod(spawnedWeapon, command.param3)
-        endif
-        
-        if command.param4 != ""
-            AttachMod(spawnedWeapon, command.param4)
-        endif
-        
-        if command.param5 != ""
-            AttachMod(spawnedWeapon, command.param5)
-        endif
-        
-        if command.param6 != ""
-            AttachMod(spawnedWeapon, command.param6)
-        endif
-        
-        if command.param7 != ""
-            AttachMod(spawnedWeapon, command.param7)
-        endif
-        
-        if command.param8 != ""
-            AttachMod(spawnedWeapon, command.param8)
-        endif
-        
-        if command.param9 != ""
-            AttachMod(spawnedWeapon, command.param9)
-        endif
-       
-        Form baseObject = spawnedWeapon.GetBaseObject()
-            
-        PlayerInventoryRemoveAllItems(baseObject, true)
-        AutoEquipAddedItem()
-        player.AddItem(spawnedWeapon, 1, abSilent = true)
-        player.DrawWeapon()
-        
-        status = viewer + " equipped you with: " + CrowdControlApi.GetName(command.id) + " (" + command.quantity + " ammo)"
-        
-		Respond(id, 0, status)
-        PrintMessage(status)
-        
-        ; Add ammo
-        if command.Param0 != ""
-            theForm = FindForm(command.Param0)
-            player.AddItem(theForm, command.quantity, abSilent = true)
-        endif
-
-    elseif command.command == "playeraddarmor"
-        ; Add armor
-        if player.IsInPowerArmor()
-            status = viewer + ", cannot equip armor or clothing while in power armor"
-
-            Respond(id, 1, status)
-            PrintMessage(status)
-        else
-            Form theForm
-            ObjectReference spawnedItem
-
-            PlayerAddArmor(command.param0)
-            PlayerAddArmor(command.param1)
-            PlayerAddArmor(command.param2)
-            PlayerAddArmor(command.param3)
-            PlayerAddArmor(command.param4)
-            PlayerAddArmor(command.param5)
-            PlayerAddArmor(command.param6)
-            PlayerAddArmor(command.param7)
-            PlayerAddArmor(command.param8)
-            PlayerAddArmor(command.param9)
-            
-            Utility.Wait(0.5)
-            
-            Actor:WornItem wornBody = player.GetWornItem(3)
-            
-            if command.id > 0 && (wornBody == None || wornBody.item == none || wornBody.ModelName == "Actors\\Character\\CharacterAssets\\FemaleBody.nif" || wornBody.ModelName == "Actors\\Character\\CharacterAssets\\MaleBody.nif")
-                theForm = FindForm(command.id)
-                
-                spawnedItem = player.PlaceAtMe(theForm)
-                
-                PlayerInventoryRemoveAllItems(spawnedItem.GetBaseObject())
-                AutoEquipAddedItem()
-                player.AddItem(spawnedItem, 1, abSilent = true)
-            endif
-
-            status = viewer + " equipped you with: " + CrowdControlApi.GetName(command.param0)
-            
-            Respond(id, 0, status)
-            PrintMessage(status)
-            
-            Game.ForceThirdPerson()
-        
-        endif
-        
-    elseif command.command == "playeraddpowerarmor"
-        if !player.IsInPowerArmor()
-            ; Add power armor
-            Form theForm = FindForm(command.id)
-            
-            ObjectReference spawnedArmor = player.PlaceAtMe(theForm)
-            
-            player.SwitchToPowerArmor(spawnedArmor)
-            
-            status = viewer + " equipped you with: " + CrowdControlApi.GetName(command.id)
-       
-            PrintMessage(status)
-            Respond(id, 0, status)
-        else
-            status = viewer + ", cannot equip another power armor. Already in power armor."
-       
-            PrintMessage(status)
-            Respond(id, 1, status)
-        endif
-        
-	elseif command.command == "playerplaceactoratme"
-        ; Apply cooldown
-        if command.Param0 != "" && command.Param0 as int > 0
-            if !CheckCooldown(id, "playerplaceactoratme~" + command.id + "~" + command.quantity, command.Param0 as int)
-                status = viewer + ", cannot spawn at this time. Cooldown active."
-                
-                PrintMessage(status)
-                Respond(id, 1, status)
-                return
-            endif
-        endif
-      
-        ; Only outdoors
-        if command.param1 != "" && command.param1 as int > 0
-            if player.IsInInterior()
-                status = viewer + ", cannot spawn this indoors"
-                
-                Respond(id, 1, status)
-                PrintMessage(status)
-                return
-            endif
-        endif
-        
-        Form theForm = FindForm(command.id)
-    
-		Actor spawnedActor
-        ActorBase theActorBase
-
-        float pushForce = 10.0
-
-        int i = 0
-        while i < command.quantity
-            PingUpdateTimer()
-            
-            spawnedActor = player.PlaceActorAtMe(theForm as ActorBase)
-            
-            spawnedActor.SetAngle(0.0, spawnedActor.GetAngleY(), spawnedActor.GetAngleZ())
-            
-            if command.param3 != "" && command.param3 as float > 0
-                float maxDistance = command.param3 as float
-                float minDistance = maxDistance - 100.0
-
-                if maxDistance < minDistance
-                    minDistance = 0.0
-                endif
-
-                Float randomAngle = Utility.RandomFloat() * 360.0
-                Float randomDistance = minDistance + Utility.RandomFloat() * (maxDistance - minDistance)
-
-                float offsetX = Math.Cos(randomAngle) * randomDistance
-                float offsetY = Math.Sin(randomAngle) * randomDistance
-
-                spawnedActor.MoveTo(player, offsetX, offsetY, 100, false)
-            endif
-            
-            if command.param4 != ""
-                Debug.Trace("Play custom sound")
-                PlaySound(command.param4)
-            elseif command.param2 as int != 1
-                Debug.Trace("Play default sound")
-                PlaySound(0xFBE6A)
-            endif
-
-            if command.param2 != ""
-                if command.param2 as int == 1
-                    spawnedActor.AddKeyword(keywordActorFriendlyNpc)
-                    spawnedActor.RemoveFromAllFactions()
-                    spawnedActor.AddToFaction(playerFaction)
-                    if command.param3 == "" || command.param3 as float <= 0
-                        player.PushActorAway(spawnedActor, pushForce)
-                    endif
-                    StopFriendlyCombat(spawnedActor)
-                    StopFriendlyCombatWith(spawnedActor)
-                    
-                elseif command.param2 as int == 2
-                    spawnedActor.AddToFaction(playerEnemyFaction)
-                    
-                    if spawnedActor.GetValue(Game.GetAggressionAV()) < 2
-                        spawnedActor.SetValue(Game.GetAggressionAV(), 2)
-                    endif
-
-                    spawnedActor.StopCombat()
-                    if command.param3 == "" || command.param3 as float <= 0
-                        player.PushActorAway(spawnedActor, pushForce)
-                    endif
-
-                else
-                    if command.param4 != ""
-                        PlaySound(command.param4)
-                    else
-                        PlaySound(0xFBE6A)
-                    endif                    
-                endif
-            else
-                if command.param3 == "" || command.param3 as float <= 0
-                    player.PushActorAway(spawnedActor, pushForce)
-                endif
-            endif
-            
-            if theActorBase == None
-                theActorBase = spawnedActor.GetLeveledActorBase()          
-                
-                if command.param2 != "" && command.param2 as int == 1
-                    status = viewer + " spawned friendly: " + CrowdControlApi.GetName(command.id) + " (" + command.quantity + ")"
-                elseif command.param2 != "" && command.param2 as int == 2
-                    status = viewer + " spawned hostile: " + CrowdControlApi.GetName(command.id) + " (" + command.quantity + ")"
-                else
-                    status = viewer + " spawned: " + CrowdControlApi.GetName(command.id) + " (" + command.quantity + ")"
-                endif
-                
-                Respond(id, 0, status)
-                PrintMessage(status)
-            endif
-            
-            i += 1
-        endWhile
-
-    elseif command.command == "playerplaceactoratmefollower"
-        bool isOutdoor = false
-        
-        if command.param0 != "" && command.param0 as int > 0
-            if player.IsInInterior()
-                status = viewer + ", cannot spawn this follower indoors"
-                
-                PrintMessage(status)
-                Respond(id, 1, status)
-                return
-            endif
-
-            isOutdoor = true
-        endif
-       
-        if CountAllFollowers() >= 3
-            status = viewer + ", can't spawn any more followers"
-            
-            PrintMessage(status)
-            Respond(id, 1, status)
-            
-            return
-        endif
-        
-		Actor spawnedActor = AddFollower(command.id, isOutdoor)
-        
-        if spawnedActor != None
-            spawnedActor.AddKeyword(keywordActorFriendlyNpc)
-            
-            StopFriendlyCombat(spawnedActor)
-            StopFriendlyCombatWith(spawnedActor)
-
-            spawnedActor.SetAngle(0.0, spawnedActor.GetAngleY(), spawnedActor.GetAngleZ())
-        
-            ActorBase theActorBase = spawnedActor.GetLeveledActorBase()
-            
-            status = viewer + " spawned follower: " + CrowdControlApi.GetName(command.id)
-           
-            Respond(id, 0, status)
-            PrintMessage(status)
-        else
-            status = viewer + ", can't spawn any more followers"
-            
-            PrintMessage(status)
-            Respond(id, 1, status)
-        endif
-    
-    elseif command.command == "playerplaceactoratmeunique"
-        
-        ReferenceAlias ra = GetAlias(command.Param0 as int)
-        Actor a = ra.GetActorReference()
-        
-        if a == None
-            Form theForm = FindForm(command.id)
-        
-            Actor spawnedActor = player.PlaceActorAtMe(theForm as ActorBase)
-
-            spawnedActor.AddKeyword(keywordActorFriendlyNpc)
-            
-            StopFriendlyCombat(spawnedActor)
-            StopFriendlyCombatWith(spawnedActor)
-        
-            ra.ForceRefTo(spawnedActor)
-
-            spawnedActor.SetAngle(0.0, spawnedActor.GetAngleY(), spawnedActor.GetAngleZ())
-
-            ActorBase theActorBase = spawnedActor.GetLeveledActorBase()
-            
-            status = viewer + " spawned: " + CrowdControlApi.GetName(command.id)
-
-            Respond(id, 0, status)
-            PrintMessage(status)
-        else
-            ActorBase theActorBase = a.GetLeveledActorBase()
-            
-            status = viewer + ", unique follower " + CrowdControlApi.GetName(command.id) + " already exists"
-            
-            PrintMessage(status)
-            Respond(id, 1, status)
-        endif
-
-    elseif command.command == "controlsfasttraveloff"
-        if type == 1
-			if CrowdControlApi.HasTimer("controlsfasttraveloff")
-				Respond(id, 3)
-			elseif Game.IsFastTravelEnabled()
-				inputControl.EnableFastTravel(false)
-             
-                status = viewer + " disabled fast travel for " + command.quantity + " seconds"
-                
-                PrintMessage(status)
-				Respond(id, 4, status, 1000 * command.quantity)
-			endif
-		else
-            inputControl.EnableFastTravel(true)
-            
-            status = "Fast travel enabled"
-            
-            PrintMessage(status)
-			Respond(id, 0, status)
-		endif 
-
-    elseif command.command == "controlsvatmenusoff"
-        if type == 1
-			if CrowdControlApi.HasTimer("controlsvatmenusoff")
-				Respond(id, 3)
-
-			elseif Game.IsVATSControlsEnabled() && inputControl.IsMenuEnabled()
-				inputControl.EnableVATS(false)
-                inputControl.EnableMenu(false)
-             
-                status = viewer + " disabled VATS and PipBoy for " + command.quantity + " seconds"
-                
-                PrintMessage(status)
-				Respond(id, 4, status, 1000 * command.quantity)
-			endif
-		else
-            inputControl.EnableVATS(true)
-            inputControl.EnableMenu(true)
-            
-            status = "VATS and PipBoy enabled"
-            
-            PrintMessage(status)
-			Respond(id, 0, status)
-		endif 
-        
-    elseif command.command == "controlsrunningsoff"
-        if type == 1
-			if CrowdControlApi.HasTimer("controlsrunningsoff")
-				Respond(id, 3)
-
-			elseif inputControl.IsRunningEnabled()
-				inputControl.EnableRunning(false)
-             
-                status = viewer + " forced walking for " + command.quantity + " seconds"
-                
-                PrintMessage(status)
-				Respond(id, 4, status, 1000 * command.quantity)
-			endif
-		else
-            inputControl.EnableRunning(true)
-            
-            status = "Running enabled"
-            
-            PrintMessage(status)
-			Respond(id, 0, status)
-		endif 
-        
-    elseif command.command == "controlssprintingjumpingoff"
-        if type == 1
-			if CrowdControlApi.HasTimer("controlssprintingjumpingoff")
-				Respond(id, 3)
-
-			elseif inputControl.IsSprintingEnabled() && inputControl.IsJumpingEnabled()
-				inputControl.EnableSprinting(false)
-                inputControl.EnableJumping(false)
-             
-                status = viewer + " disabled sprinting and jumping for " + command.quantity + " seconds"
-                
-                PrintMessage(status)
-				Respond(id, 4, status, 1000 * command.quantity)
-			endif
-		else
-            inputControl.EnableSprinting(true)
-            inputControl.EnableJumping(true)
-            
-            status = "Sprinting and jumping enabled"
-            
-            PrintMessage(status)
-			Respond(id, 0, status)
-		endif 
-
-    elseif command.command == "autosave"
-        Game.RequestAutoSave()
-        
-        status = viewer + " requested auto save"
-
-		Respond(id, 0, status)
-        PrintMessage(status)
         
     elseif command.command == "fasttravel"
         if Game.IsFastTravelEnabled()
@@ -1271,120 +616,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
 
         Respond(id, 0, status)
         PrintMessage(status)
-        
-    elseif command.command == "givexp"
-        int currentLevel = Game.GetPlayerLevel()
-        if currentLevel < 65530
-            int xp = command.quantity
-            
-            if xp <= 1
-                xp = Game.GetXPForLevel(currentLevel + 1) - Game.GetXPForLevel(currentLevel)
-            endif
-        
-            Game.RewardPlayerXP(xp)
-            
-            status = viewer + " gave " + xp + " XP."
 
-            Respond(id, 0, status)
-            PrintMessage(status)
-        else
-            status = viewer + ", cannot give XP. Maximum level reached."
-
-            Respond(id, 1, status)
-            PrintMessage(status)
-        endif
-
-    elseif command.command == "playeraidriven"
-        if type == 1
-			if CrowdControlApi.HasTimer("playeraidriven")
-				Respond(id, 3)
-            else
-                ; Turn on the AI driven flag
-                Game.SetPlayerAIDriven()
-                
-                status = viewer + " player is now controlled by AI"
-                
-                PrintMessage(status)
-                Respond(id, 4, status, 1000 * command.quantity)
-            endif
-		else
-            status = "Player AI off"
-            
-            Game.SetPlayerAIDriven(false)
-            
-            PrintMessage(status)
-			Respond(id, 0, status)
-		endif
-        
-    elseif command.command == "changeplayerluck"
-        ChangeSpecial(id, viewer, command, Game.GetLuckAV(), "Luck")
-        
-    elseif command.command == "changeplayerstrength"
-        ChangeSpecial(id, viewer, command, Game.GetStrengthAV(), "Strength")
-        
-    elseif command.command == "changeplayerperception"
-        ChangeSpecial(id, viewer, command, Game.GetPerceptionAV(), "Perception")
-    
-    elseif command.command == "changeplayerendurance"
-        ChangeSpecial(id, viewer, command, Game.GetEnduranceAV(), "Endurance")
-
-    elseif command.command == "changeplayercharisma"
-        ChangeSpecial(id, viewer, command, Game.GetCharismaAV(), "Charisma")
-
-    elseif command.command == "changeplayerintelligence"
-        ChangeSpecial(id, viewer, command, Game.GetIntelligenceAV(), "Intelligence")
-
-    elseif command.command == "changeplayeragility"
-        ChangeSpecial(id, viewer, command, Game.GetAgilityAV(), "Agility")
-        
-    elseif command.command == "playerlaunch"
-        ; Create an instance of the launch marker at the player's location
-        ObjectReference marker = player.PlaceAtMe(launchMarker)
-		
-        ; Generate a random angle between 0 and 360 degrees
-        float angle = Utility.RandomFloat() * 360.0
-        
-        ; Set the horizontal displacement factor (used to control the range of possible launch angles)
-        float horizontalDisplacementFactor = 25.0
-        
-        ; Check if a command parameter is provided to override the default horizontal displacement factor
-        if command.param1 != "" && command.param1 as float > 0.0
-            horizontalDisplacementFactor = command.param1 as float
-        endif
-        
-        ; Calculate the horizontal displacements based on the random angle and the horizontal displacement factor
-        float displacementX = Math.Cos(angle) * horizontalDisplacementFactor
-        float displacementY = Math.Sin(angle) * horizontalDisplacementFactor
-
-        ; Move the marker to the player's location plus the calculated horizontal and vertical displacements
-        marker.MoveTo(player, displacementX, displacementY, - command.Param0 as int)
-        
-        ; Push the player away from the marker, causing the player to be launched
-		marker.PushActorAway(player, command.quantity)
-        
-        status = viewer + " launched player"
-            
-        PrintMessage(status)
-        Respond(id, 0, status)
-        
-    elseif command.command == "playercamerafirstperson"
-   
-        Game.ForceFirstPerson()
-    
-        status = viewer + " set player camera to first person"
-            
-        PrintMessage(status)
-        Respond(id, 0, status)
-        
-    elseif command.command == "playercamerathirdperson"
-   
-        Game.ForceThirdPerson()
-    
-        status = viewer + " set player camera to third person"
-            
-        PrintMessage(status)
-        Respond(id, 0, status)
-        
     elseif command.command == "playsound"
    
         if command.id > 0
@@ -1409,412 +641,12 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         
         PrintMessage(status)
         Respond(id, 0, status)
-
-    elseif command.command == "removeequippedweapon"
-
-        Weapon akEquippedWeapon = player.GetEquippedWeapon()
-        
-        if akEquippedWeapon
-            PlaySoundId(0xED8A3)
-
-            player.RemoveItem(akEquippedWeapon, 1, true)
-
-            status = viewer + " removed the current weapon"
-        
-            PrintMessage(status)
-            Respond(id, 0, status)
-
-        else
-            status = viewer + ", no weapon currently equipped, cannot remove"
-        
-            PrintMessage(status)
-            Respond(id, 1, status)
-        endif
-        
-    elseif command.command == "removeequippedpowerarmor"
-        if player.IsInPowerArmor()
-            PlaySoundId(0xED8A3)
-        
-            Actor:WornItem wornItem0 = player.GetWornItem(0)
-            Actor:WornItem wornItem11 = player.GetWornItem(11)
-            Actor:WornItem wornItem12 = player.GetWornItem(12)
-            Actor:WornItem wornItem13 = player.GetWornItem(13)
-            Actor:WornItem wornItem14 = player.GetWornItem(14)
-            Actor:WornItem wornItem15 = player.GetWornItem(15)
-            Actor:WornItem wornItem3 = player.GetWornItem(3)
-            
-            if wornItem0
-                player.RemoveItem(wornItem0.Item, 1, true)
-            endif
-            
-            if wornItem11
-                player.RemoveItem(wornItem11.Item, 1, true)
-            endif
-            
-            if wornItem12
-                player.RemoveItem(wornItem12.Item, 1, true)
-            endif
-            
-            if wornItem13
-                player.RemoveItem(wornItem13.Item, 1, true)
-            endif
-            
-            if wornItem14
-                player.RemoveItem(wornItem14.Item, 1, true)
-            endif
-            
-            if wornItem15
-                player.RemoveItem(wornItem15.Item, 1, true)
-            endif
-
-            while player.IsInPowerArmor()
-                PingUpdateTimer()
-                
-                Debug.Trace("Remove power armor.")
-                
-                player.SwitchToPowerArmor(None)
-                Utility.Wait(0.5)
-            endWhile
-
-            if wornItem3
-                player.RemoveItem(wornItem3.Item, 1, true)
-            endif
-            
-            status = viewer + " removed power armor"
-        
-            PrintMessage(status)
-            Respond(id, 0, status)
-        else
-            status = viewer + ", no power armor currently equipped, cannot remove"
-        
-            PrintMessage(status)
-            Respond(id, 1, status)
-        endif
-        
-    elseif command.command == "setgamehour"
-        int hour = command.id as int
-    
-        GameHour.SetValue(hour)
-    
-        if hour == 0
-            status = viewer + " set game time to 12 AM"
-        elseif hour < 12
-            status = viewer + " set game time to " + hour + " AM"
-            
-        elseif hour == 12
-            status = viewer + " set game time to 12 PM."
-        else
-            status = viewer + " set game time to " + (hour - 12) + " PM"
-        endif
-        
-        PrintMessage(status)
-        Respond(id, 0, status)
-        
-    elseif command.command == "fadeoutscreen"
-        status = viewer + " faded the screen out for " + command.quantity + " seconds"
-        
-        PrintMessage(status)
-        Respond(id, 0, status)
-        
-        Game.FadeOutGame(false, false, command.quantity, 1.0)
-
-    elseif command.command == "playerequipitem"
-        Form theItem = FindForm(command.id)
-        
-        int i = 0
-        while i < command.quantity
-            PingUpdateTimer()
-            
-            player.EquipItem(theItem, false, true)
-            
-            i += 1
-        endwhile
-        
-        status = viewer + " equipped you with: " + CrowdControlApi.GetName(command.id)
-        
-        PrintMessage(status)
-        Respond(id, 0, status)
-        
-    elseif command.command == "playersetav"
-        ActorValue av = FindForm(command.id) as ActorValue
-        
-        Debug.Trace("Before value of " + command.id + ": " + player.GetValue(av))
-        Debug.Trace("Before base value of " + command.id + ": " + player.GetBaseValue(av))
-       
-        float value = player.GetValue(av)
-        
-        if command.param0 != "" && command.param0 as int > 0
-            player.ModValue(av, (-command.quantity) - value)
-            
-            Debug.Trace("Mod value " + command.id + ": " + ((-command.quantity) - value))
-        else
-            player.ModValue(av, command.quantity - value)
-            
-            Debug.Trace("Mod value " + command.id + ": " + (command.quantity - value))
-        endif
-
-        Debug.Trace("After value of " + command.id + ": " + player.GetValue(av))
-        Debug.Trace("After base value of " + command.id + ": " + player.GetBaseValue(av))
-        
-        status = viewer + " set value " + command.id + " to " + command.quantity
-       
-        if command.param1 != "" && command.param1 as int > 0
-          Debug.Trace("Adding spell: " + command.param1 as int)
-        
-          Spell newSpell = FindForm(command.param1) as Spell
-          
-          player.AddSpell(newSpell, false)
-        endif
-        
-        if command.param2 != "" && command.param2 as int > 0
-            Debug.Trace("Removing spell: " + command.param1 as int)
-        
-            player.RemoveSpell(FindForm(command.param2) as Spell)
-        endif
-        
-        PrintMessage(status)
-        Respond(id, 0, status)
-   
-    elseif command.command == "playerdamageav"
-        if command.Param0 != "" && command.Param0 as int > 0
-            if player.IsInPowerArmor()
-                status = viewer + ", cannot cripple player while wearing power armor."
-        
-                PrintMessage(status)
-                Respond(id, 1, status)
-                
-                return
-            endif
-        endif
-    
-        ActorValue av = FindForm(command.id) as ActorValue
-        
-        player.DamageValue(av, command.quantity)
-        
-        status = viewer + " crippled player"
-        
-        PrintMessage(status)
-        Respond(id, 0, status)
-        
-    elseif command.command == "playerrestoreav"
-        ActorValue av = FindForm(command.id) as ActorValue
-        
-        player.RestoreValue(av, command.quantity)
-        
-        if command.param0 != "" && command.param0 as int > 0
-            av = FindForm(command.param0) as ActorValue
-            player.RestoreValue(av, command.quantity)
-        endif
-        
-        if command.param1 != "" && command.param1 as int > 0
-            av = FindForm(command.param1) as ActorValue
-            player.RestoreValue(av, command.quantity)
-        endif
-        
-        if command.param2 != "" && command.param2 as int > 0
-            av = FindForm(command.param2) as ActorValue
-            player.RestoreValue(av, command.quantity)
-        endif
-        
-        if command.param3 != "" && command.param3 as int > 0
-            av = FindForm(command.param3) as ActorValue
-            player.RestoreValue(av, command.quantity)
-        endif
-        
-        if command.param4 != "" && command.param4 as int > 0
-            av = FindForm(command.param4) as ActorValue
-            player.RestoreValue(av, command.quantity)
-        endif
-        
-        if command.param5 != "" && command.param5 as int > 0
-            av = FindForm(command.param5) as ActorValue
-            player.RestoreValue(av, command.quantity)
-        endif
-        
-        if command.param6 != "" && command.param6 as int > 0
-            av = FindForm(command.param6) as ActorValue
-            player.RestoreValue(av, command.quantity)
-        endif
-        
-        if command.param7 != "" && command.param7 as int > 0
-            av = FindForm(command.param7) as ActorValue
-            player.RestoreValue(av, command.quantity)
-        endif
-        
-        if command.param8 != "" && command.param8 as int > 0
-            av = FindForm(command.param8) as ActorValue
-            player.RestoreValue(av, command.quantity)
-        endif
-        
-        if command.param9 != "" && command.param9 as int > 0
-            av = FindForm(command.param9) as ActorValue
-            player.RestoreValue(av, command.quantity)
-        endif
-        
-        status = viewer + " healed player"
-        
-        PrintMessage(status)
-        Respond(id, 0, status)
-    
-    elseif command.command == "screenblood"
-        Game.TriggerScreenBlood(command.quantity)
-        
-        status = viewer + " triggered blood effect"
-        
-        PrintMessage(status)
-        Respond(id, 0, status)
-        
-    elseif command.command == "shakecamera"
-        Game.ShakeCamera(afStrength = (command.quantity as float / 100.0))
-        
-        status = viewer + " triggered camera shake"
-        
-        PrintMessage(status)
-        Respond(id, 0, status)
-        
-    elseif command.command == "shakecamera2"
-        Game.ShakeCamera(afStrength = (command.param0 as float / 100.0), afDuration = command.quantity as float)
-        
-        status = viewer + " triggered camera shake"
-        
-        PrintMessage(status)
-        Respond(id, 0, status)
-        
-    elseif command.command == "scare"
-        if command.param0 as int > 0
-            Game.ShakeCamera(afStrength = (command.param0 as float / 100.0), afDuration = (command.param1 as float / 1000.0))
-        endif
-        
-        if command.param2 as int > 0
-            Game.TriggerScreenBlood(command.param2 as int)
-        endif
-        
-        PlaySound(command.id)
-        
-        status = viewer + " triggered a scare"
-        
-        PrintMessage(status)
-        Respond(id, 0, status)
-        
-    elseif command.command == "playerequipaddiction"
-        if player.HasPerk(FindFormId(0x4A0D5) as Perk) || player.HasPerk(FindFormId(0x65E0C) as Perk)
-           ; All addictions impossible
-           
-           status = viewer + ", player has the Chem Resistant perk. Cannot give player addictions."
-        
-            PrintMessage(status)
-            Respond(id, 1, status)
-        
-        elseif command.id == 0x01005B99 && (player.HasPerk(FindFormId(0x4D887) as Perk) || player.HasPerk(FindFormId(0x1D2473) as Perk) || player.HasPerk(FindFormId(0x1D2474) as Perk) || player.HasPerk(FindFormId(0x4D888) as Perk) || player.HasPerk(FindFormId(0x1D2475) as Perk) || player.HasPerk(FindFormId(0x1D2476) as Perk))
-            ; Alcohol addiction impossible
-            
-            int playerSex = player.GetActorBase().GetSex()
-        
-            if playerSex == 0
-                ; Male
-                status = viewer + ", player has the Party Boy perk. Cannot give player alcohol addiction."
-            elseif playerSex == 1
-                ; Female
-                status = viewer + ", player has the Party Girl perk. Cannot give player alcohol addiction."
-            endif
-        
-            PrintMessage(status)
-            Respond(id, 1, status)
-            
-        else
-            Form theItem = FindForm(command.id)
-            
-            int i = 0
-            while i < command.quantity
-                PingUpdateTimer()
-                
-                player.EquipItem(theItem, false, true)
-                
-                i += 1
-            endwhile
-            
-            status = viewer + " gave you: " + CrowdControlApi.GetName(command.id)
-            
-            PrintMessage(status)
-            Respond(id, 0, status)
-        endif
-        
-    elseif command.command == "ShowNotification"
-        status = ccCommand.Param0
-        
-        Debug.Notification(status)
-        Respond(id, 0, status)
-        
-    elseif command.command == "ShouldShowNotifications"
-        ShouldShowNotifications = ccCommand.Param0 as int
-        
-        Respond(id, 0, "Notifications set.")
     
     else
         Debug.Notification("Unknown command received: " + command.command)
 	endif
 
 EndFunction
-
-Function ChangeSpecial(int id, string viewer, ParsedCommand command, ActorValue av, string name)
-    string status
-    int currentValue = command.quantity
-        
-    if command.id == 1
-        currentValue = player.GetBaseValue(av) as int
-        currentValue = currentValue + command.quantity
-    endif
-    
-    if currentValue <= 10 && currentValue >= 1
-        player.SetValue(av, currentValue)
-        
-        if command.id == 1
-            if command.quantity >= 0
-                status = viewer + " increased player " + name + " +" + command.quantity
-            else
-                status = viewer + " decreased player " + name + " " + command.quantity
-            endif
-        else
-            status = viewer + " set player " + name + " to " + command.quantity
-        endif 
-        
-        PrintMessage(status)
-        Respond(id, 0, status)
-    else
-        status = viewer + ", player " + name + " is already at maximum"
-        
-        PrintMessage(status)
-        Respond(id, 1, status)
-    endif
-endFunction
-
-Function PlayerAddArmor(string id)
-    Form theForm
-    ObjectReference spawnedItem
-
-    if id != ""
-        ; id format: [formId]~[modId]~[modId]...
-        string[] ids = CrowdControlApi.StringSplit(id, "~")
-        
-        if ids.length > 1
-            theForm = FindForm(ids[0])
-            spawnedItem = player.PlaceAtMe(theForm)
-            
-            int i = 1
-            while i < ids.length
-                AttachMod(spawnedItem, ids[i])
-                i += 1
-            endwhile
-        else
-            theForm = FindForm(id)
-            spawnedItem = player.PlaceAtMe(theForm)
-        endif
-        
-        PlayerInventoryRemoveAllItems(spawnedItem.GetBaseObject())
-        AutoEquipAddedItem()
-        player.AddItem(spawnedItem, 1, abSilent = true)
-    endif
-endfunction
 
 ;-- Workshop --
 
@@ -1827,197 +659,6 @@ Event OnWorkshopMode(bool aStart)
     isPlayerInWorkshop = false
   endif
 EndEvent
-
-;-- Cooldowns --
-
-struct ActiveCooldown
-    string id
-    int startTime
-EndStruct
-
-ActiveCooldown[] activeCooldowns
-
-bool Function CheckCooldown(int id, string cooldownId, int seconds)
-    ;Debug.Trace("CheckCooldown: " + cooldownId)
-
-    ActiveCooldown ac = FindOrStartCooldown(cooldownId)
-    if ac != None
-        if (Utility.GetCurrentRealTime() as int) - ac.startTime < seconds
-            ;Debug.Trace("  In cooldown")
-            
-            Respond(id, 1)
-            return false
-        else
-            ;Debug.Trace("  cooldown ended")
-        
-            EndCooldown(cooldownId)
-            FindOrStartCooldown(cooldownId)
-        endif
-    else
-        ;Debug.Trace("  new cooldown started")
-    endif
-    
-    return true
-endFunction
-
-ActiveCooldown Function FindOrStartCooldown(string cooldownId)
-    ActiveCooldown ac = FindCooldown(cooldownId)
-    if ac != None
-        return ac
-    endif
-
-    ac = new ActiveCooldown
-
-    ac.id = cooldownId
-    ac.startTime = Utility.GetCurrentRealTime() as int
-
-    activeCooldowns.Add(ac)
-    
-    return None
-EndFunction
-
-bool Function EndCooldown(string cooldownId)
-    int i = activeCooldowns.FindStruct("id", cooldownId)
-    
-    if i < 0
-        return false
-    endif
-   
-    activeCooldowns.remove(i)
-    
-    return true
-endFunction
-
-ActiveCooldown Function FindCooldown(string cooldownId)
-    int i = activeCooldowns.FindStruct("id", cooldownId)
-    if i < 0
-        return None
-    endif
-    return activeCooldowns[i]
-endFunction
-
-;-- Followers --
-
-int Function CountFollowers(bool outdoorOnly)
-    int startIndex = 2
-    int endIndex = 4
-
-    if outdoorOnly
-        startIndex = 9
-        endIndex = 11
-    endif
-
-    ReferenceAlias ra
-    Actor a
-   
-    int count = 0
-    
-    int i = startIndex
-    while i <= endIndex
-        ra = GetOwningQuest().GetAlias(i) as ReferenceAlias
-        a = ra.GetActorReference()
-
-        ; Clear alias for any dead followers
-        if a != None
-            if a.IsDead()
-                ra.Clear()
-                a = None
-            endif
-        endif
-      
-        if a != None
-            Debug.Trace("CountFollowers(): Found follower (i=" + i + ", id=" + a.GetFormID() + ")")
-            
-            count += 1
-        endif
-      
-        i += 1
-    endWhile
-    
-    return count
-EndFunction
-
-int Function CountAllFollowers()
-    int count
-    
-    count += CountFollowers(false)
-    count += CountFollowers(true)
-    
-    return count
-EndFunction
-
-Actor Function AddFollower(string id, bool outdoorOnly)
-    int startIndex = 2
-    int endIndex = 4
-
-    if outdoorOnly
-        startIndex = 9
-        endIndex = 11
-    endif
-
-    bool wasAdded = false
-    ReferenceAlias ra
-    Actor a
-    Actor spawnedActor
-    int i = startIndex
-    while i <= endIndex
-      ra = GetOwningQuest().GetAlias(i) as ReferenceAlias
-      a = ra.GetActorReference()
-      
-      ; Clear alias for any dead followers
-      if a != None
-          if a.IsDead()
-            ra.Clear()
-            a = None
-          endif
-      endif
-      
-      if a == None
-        Form theForm = FindForm(id)
-       
-        if theForm != None
-            spawnedActor = player.PlaceActorAtMe(theForm as ActorBase)
-            spawnedActor.RemoveFromAllFactions()
-            ra.ForceRefTo(spawnedActor)
-            spawnedActor.SetPlayerTeammate(true)
-            
-            SetFollowerState(i)
-
-            id = ""
-        endif
-        
-      endif
-      
-      i += 1
-    endWhile
-    
-    return spawnedActor
-EndFunction
-
-; Not currently used, but can be used to keep additional state associated with specific followers
-struct FollowerState
-    int index
-EndStruct
-
-FollowerState[] followerStates
-
-FollowerState Function GetFollowerState(int index)
-    int i = followerStates.FindStruct("index", index)
-    if i < 0
-        return None
-    endif
-    return followerStates[i]
-endFunction
-
-Function SetFollowerState(int index)
-    FollowerState fs = GetFollowerState(index)
-    if fs == None
-        fs = new FollowerState
-        followerStates.Add(fs)
-    endif
-
-    fs.index = index
-endFunction
 
 ; -- Util --
 

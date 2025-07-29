@@ -35,7 +35,6 @@ EndStruct
 int Function GetCommandCount() Global Native
 CrowdControlCommand Function GetCommand() Global Native
 
-int Function HasTimer(string command_name) Global Native
 Function ClearTimers() Global Native
 int Function GetIntSetting(string section, string key) Global Native
 float Function GetFloatSetting(string section, string key) Global Native
