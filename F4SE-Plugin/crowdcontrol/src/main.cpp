@@ -917,7 +917,7 @@ void OnF4SELoad(const F4SESerializationInterface * intfc) {
 extern "C" {
 	bool F4SEPlugin_Query( const F4SEInterface *f4se, PluginInfo *info )
 	{
-		gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Fallout4\\F4SE\\CrowdControl.log");
+		gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Fallout4\\F4SE\\CrowdControlFrost.log");
 		gLog.SetPrintLevel(IDebugLog::kLevel_DebugMessage);
 #if DEBUG
 		gLog.SetLogLevel(IDebugLog::kLevel_DebugMessage);
