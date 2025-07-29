@@ -1,5 +1,5 @@
-# Fallout 4 Crowd Control MOD
-This repository holds the source code of the F4CC mod.
+# Fallout 4: Frost Crowd Control MOD
+This repository holds the source code of the FrostCC mod.
 
 For information about this MOD and how to use it see: [f4cc.kmrkle.tv/installation](https://f4cc.kmrkle.tv/installation)
 
