@@ -649,7 +649,7 @@ bool LoadIni()
 			HRESULT error = SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS | CSIDL_FLAG_CREATE, NULL, SHGFP_TYPE_CURRENT, path);
 			if (SUCCEEDED(error))
 			{
-				strcat_s(path, sizeof(path), "\\My Games\\Fallout4\\CrowdControl.ini");
+				strcat_s(path, sizeof(path), "\\My Games\\Fallout4\\CrowdControlFrost.ini");
 
 				if (GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES)
 				{
