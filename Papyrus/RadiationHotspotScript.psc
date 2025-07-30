@@ -40,3 +40,27 @@ Bool Function SpawnHotspot(Int tier, ObjectReference target)
     spawnMarker.PlaceAtMe(toSpawn)
     return True
 EndFunction
+
+
+Bool Function CleanseHotspots(ObjectReference target, Float radius)
+    ObjectReference[] hazards = target.FindAllReferencesOfType(Hotspots, radius)
+    If hazards.Length == 0
+        return False
+    EndIf
+
+    Int i = 0
+    While i < hazards.Length
+        ObjectReference theHazard = hazards[i]
+        Form theHazardBase = theHazard.GetBaseObject()
+        theHazard.Disable()
+        If theHazardBase == MediumHotspot
+            theHazard.PlaceAtMe(SmallHotspot)
+        ElseIf theHazardBase == LargeHotspot
+            theHazard.PlaceAtMe(MediumHotspot)
+        EndIf
+        theHazard.Delete()
+        i += 1
+    EndWhile
+
+    return True
+EndFunction

@@ -5,6 +5,7 @@ Scriptname CrowdControl extends ReferenceAlias
 Chance CH = None
 RadiationHotspotScript RadiationHotspot = None
 HostileSpawnScript HostileSpawn = None
+HazardSpawnScript HazardSpawn = None
 
 Int[] ItemDie = None
 Int[] ItemResults = None
@@ -88,6 +89,10 @@ Function InitVars()
 
     If HostileSpawn == None
         HostileSpawn = GetOwningQuest().GetAlias(0) as HostileSpawnScript
+	Endif
+
+    If HazardSpawn == None
+        HazardSpawn = GetOwningQuest().GetAlias(0) as HazardSpawnScript
 	Endif
 EndFunction
 
@@ -494,8 +499,48 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         data.minDistance = command.param0 as Float
         data.maxDistance = command.param1 as Float
 
-        if !HostileSpawn.QueueSpawn(data)
+        If command.param2 != ""
+            data.radius = command.param2 as Float
+        Else
+            data.radius = 0
+        EndIf
+
+        If command.param3 != ""
+            data.exclusionRadius = command.param3 as Float
+        Else
+            data.exclusionRadius = 0
+        EndIf
+
+        If !HostileSpawn.QueueSpawn(data)
             status = viewer + ", too many hostile spawns pending"
+            PrintMessage(status)
+            Respond(id, 1, status)
+        Else
+            PrintMessage(status)
+            Respond(id, 0, status)
+        EndIf
+
+    elseif command.command == "hazard"
+        SafeSpawnBaseScript:SpawnData data = new SafeSpawnBaseScript:SpawnData
+        data.theForm = FindForm(command.id)
+        data.quantity = command.quantity
+        data.minDistance = command.param0 as Float
+        data.maxDistance = command.param1 as Float
+
+        If command.param2 != ""
+            data.radius = command.param2 as Float
+        Else
+            data.radius = 0
+        EndIf
+
+        If command.param3 != ""
+            data.exclusionRadius = command.param3 as Float
+        Else
+            data.exclusionRadius = 0
+        EndIf
+
+        If !HazardSpawn.QueueSpawn(data)
+            status = viewer + ", too many hazard spawns pending"
             PrintMessage(status)
             Respond(id, 1, status)
         Else

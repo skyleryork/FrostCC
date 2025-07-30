@@ -119,6 +119,12 @@ namespace CrowdControl.Games.Packs.Fallout4_Frost
 
 			#endregion
 
+			#region Hazards
+
+			new Effect("Frag Mine Cluster (3)", $"hazard_{0xE56C3}_3_500_1500_32_64") { Price = GetPrice(25), Category = "Hazards" },
+
+			#endregion
+
 			#region TEST
 
 			new Effect("TEST", $"test") { Price = GetPrice(1), Category = "TEST" },
