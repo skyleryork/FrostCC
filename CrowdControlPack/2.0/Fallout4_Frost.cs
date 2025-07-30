@@ -100,6 +100,7 @@ namespace CrowdControl.Games.Packs.Fallout4_Frost
 			#region Scares
 
 			new Effect("Frag Mine Scare", $"itemscare_crowdcontrol__{0x1BE6E}_1") { Price = GetPrice(5), Category = "Scares" },
+			new Effect("Frag Grenade Bouqet Scare", $"spellscare_crowdcontrol__{0x1BE81}_1") { Price = GetPrice(5), Category = "Scares" },
 
 			#endregion
 
