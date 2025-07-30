@@ -277,7 +277,8 @@ EndFunction
 Struct ParsedCommand
     String command
     String id
-    Int quantity
+    Int minQuantity
+    Int maxQuantity
     int duration
     String param0
     String param1
@@ -297,7 +298,15 @@ ParsedCommand Function ParseCrowdControlCommand(CrowdControlApi:CrowdControlComm
    
     r.command = ccCommand.command
     r.id = ccCommand.param0
-    r.quantity = ccCommand.param1 as int
+
+    If CrowdControlApi.StringContains(ccCommand.param1, "~")
+        string[] quantities = CrowdControlApi.StringSplit(ccCommand.param1, "~")
+        r.minQuantity = quantities[0] as Int
+        r.maxQuantity = quantities[1] as Int
+    Else
+        r.minQuantity = ccCommand.param1 as Int
+        r.maxQuantity = r.minQuantity
+    EndIf
 
     if ccCommand.durationMS > 0
         r.duration = ccCommand.durationMS / 1000
@@ -430,6 +439,36 @@ Function AttachMod(ObjectReference spawnedItem, string modFormId)
     endif
 endfunction
 
+SafeSpawnBaseScript:SpawnData Function MakeSpawnData(ParsedCommand command)
+    SafeSpawnBaseScript:SpawnData data = new SafeSpawnBaseScript:SpawnData
+    data.theForm = FindForm(command.id)
+    data.minQuantity = command.minQuantity
+    data.maxQuantity = command.maxQuantity
+
+    If CrowdControlApi.StringContains(command.param0, "~")
+        string[] quantities = CrowdControlApi.StringSplit(command.param0, "~")
+        data.minDistance = quantities[0] as Int
+        data.maxDistance = quantities[1] as Int
+    Else
+        data.minDistance = command.param0 as Int
+        data.maxDistance = data.minDistance
+    EndIf
+
+    If command.param1 != ""
+        data.radius = command.param1 as Float
+    Else
+        data.radius = 0
+    EndIf
+
+    If command.param2 != ""
+        data.exclusionRadius = command.param2 as Float
+    Else
+        data.exclusionRadius = 0
+    EndIf
+
+    return data
+EndFunction
+
 Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
     ParsedCommand command = ParseCrowdControlCommand(ccCommand)
    
@@ -444,7 +483,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
     int type = ccCommand.type
 
     If command.command == "addlock"
-        If CH.AddForceLockTier(command.id as Int, command.quantity)
+        If CH.AddForceLockTier(command.id as Int, command.minQuantity)
             PrintMessage(status)
             Respond(id, 0, status)
         Else
@@ -453,7 +492,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         EndIf
 
     ElseIf command.command == "addunlock"
-        If CH.AddForceUnlockTier(command.id as Int, command.quantity)
+        If CH.AddForceUnlockTier(command.id as Int, command.minQuantity)
             PrintMessage(status)
             Respond(id, 0, status)
         Else
@@ -462,7 +501,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         EndIf
 
     elseif command.command == "additem"
-        If CH.AddItem(FindForm(command.id), command.quantity)
+        If CH.AddItem(FindForm(command.id), command.minQuantity)
             Respond(id, 0, status)
             PrintMessage(status)
         Else
@@ -471,7 +510,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         Endif
 
     elseif command.command == "itemscare"
-		player.PlaceAtMe(FindForm(command.id), command.quantity)
+		player.PlaceAtMe(FindForm(command.id), command.minQuantity)
         Respond(id, 0, status)
         PrintMessage(status)
 
@@ -493,23 +532,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         PrintMessage(status)
 
     elseif command.command == "spawnstalkers"
-        SafeSpawnBaseScript:SpawnData data = new SafeSpawnBaseScript:SpawnData
-        data.theForm = FindForm(command.id)
-        data.quantity = command.quantity
-        data.minDistance = command.param0 as Float
-        data.maxDistance = command.param1 as Float
-
-        If command.param2 != ""
-            data.radius = command.param2 as Float
-        Else
-            data.radius = 0
-        EndIf
-
-        If command.param3 != ""
-            data.exclusionRadius = command.param3 as Float
-        Else
-            data.exclusionRadius = 0
-        EndIf
+        SafeSpawnBaseScript:SpawnData data = MakeSpawnData(command)
 
         If !HostileSpawn.QueueSpawn(data)
             status = viewer + ", too many hostile spawns pending"
@@ -521,23 +544,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         EndIf
 
     elseif command.command == "hazard"
-        SafeSpawnBaseScript:SpawnData data = new SafeSpawnBaseScript:SpawnData
-        data.theForm = FindForm(command.id)
-        data.quantity = command.quantity
-        data.minDistance = command.param0 as Float
-        data.maxDistance = command.param1 as Float
-
-        If command.param2 != ""
-            data.radius = command.param2 as Float
-        Else
-            data.radius = 0
-        EndIf
-
-        If command.param3 != ""
-            data.exclusionRadius = command.param3 as Float
-        Else
-            data.exclusionRadius = 0
-        EndIf
+        SafeSpawnBaseScript:SpawnData data = MakeSpawnData(command)
 
         If !HazardSpawn.QueueSpawn(data)
             status = viewer + ", too many hazard spawns pending"

@@ -14,6 +14,20 @@ ReferenceAlias Property SpawnMarkerRef Auto Const Mandatory
 
 Bool locked = False
 
+
+Function Lock()
+    While locked
+        Utility.Wait(0.2)
+    EndWhile
+    locked = True
+EndFunction
+
+
+Function Unlock()
+    locked = False
+EndFunction
+
+
 Bool Function SpawnHotspot(Int tier, ObjectReference target)
     Hazard toSpawn = None
     Float spacing = 0
@@ -30,35 +44,29 @@ Bool Function SpawnHotspot(Int tier, ObjectReference target)
         return False
     EndIf
 
-    While locked
-        Utility.Wait(0.2)
-    EndWhile
-    locked = True
+    Lock()
 
     ObjectReference spawnMarker = SpawnMarkerRef.GetReference()
     spawnMarker.MoveTo(target)
 
     ObjectReference[] hazards = spawnMarker.FindAllReferencesOfType(Hotspots, spacing)
     If hazards.Length > 0
-        locked = False
+        Unlock()
         return False
     EndIf
 
     spawnMarker.PlaceAtMe(toSpawn)
-    locked = False
+    Unlock()
     return True
 EndFunction
 
 
 Bool Function CleanseHotspots(ObjectReference target, Float radius)
-    While locked
-        Utility.Wait(0.2)
-    EndWhile
-    locked = True
+    Lock()
 
     ObjectReference[] hazards = target.FindAllReferencesOfType(Hotspots, radius)
     If hazards.Length == 0
-        locked = False
+        Unlock()
         return False
     EndIf
 
@@ -76,6 +84,6 @@ Bool Function CleanseHotspots(ObjectReference target, Float radius)
         i += 1
     EndWhile
 
-    locked = False
+    Unlock()
     return True
 EndFunction

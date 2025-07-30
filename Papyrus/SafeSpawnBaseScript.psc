@@ -3,7 +3,8 @@ Scriptname SafeSpawnBaseScript extends ReferenceAlias
 
 Struct SpawnData
     Form theForm
-    Int quantity
+    Int minQuantity
+    Int maxQuantity
     Float minDistance
     Float maxDistance
     Float radius
@@ -25,7 +26,9 @@ Float LastSpawn = 0.0
 
 
 Function Init()
-    Player = Game.GetPlayer()
+    If Player == None
+        Player = Game.GetPlayer()
+    EndIf
 
     If CC == None
         CC = GetOwningQuest().GetAlias(0) as CrowdControl
@@ -36,11 +39,12 @@ Function Init()
     EndIf
 
     CancelTimer(0)
-    StartTimer(1.0, 0)
+    EndPump()
 EndFunction
 
 
 Bool Function QueueSpawn(SpawnData data)
+    Debug.Trace("QueueSpawn: " + QueueSize + " of " + Queue.Length)
     If QueueSize == Queue.Length
         return False
     EndIf
@@ -51,16 +55,18 @@ Bool Function QueueSpawn(SpawnData data)
 EndFunction
 
 
-Function PumpQueue()
+ObjectReference[] Function PumpQueue()
+    ;Debug.Trace("SafeSpawnBaseScript::PumpQueue...")
     If QueueSize == 0
-        StartTimer(1.0, 0)
-        return
+        Debug.Trace("SafeSpawnBaseScript::PumpQueue -- empty")
+        EndPump()
+        return None
     EndIf
 
     If ( Utility.GetCurrentRealTime() - LastSpawn ) < SpawnDelay
         Debug.Trace("SafeSpawnBaseScript::PumpQueue -- too soon")
-        StartTimer(1.0, 0)
-        return
+        EndPump()
+        return None
     EndIf
 
     SpawnData data = Queue[0]
@@ -73,7 +79,7 @@ Function PumpQueue()
     While i < markers.Length
         float distance = Player.GetDistance(markers[i])
         If distance >= data.minDistance && distance <= data.maxDistance && markers[i].GetWorldspace() == thisWorldspace && !Player.HasDirectLOS(markers[i]) && !markers[i].HasDirectLOS(Player)
-            If data.exclusionRadius > 0.0 && markers[i].FindAllReferencesOfType(data.theForm, data.exclusionRadius).Length == 0
+            If data.exclusionRadius <= 0.0 || markers[i].FindAllReferencesOfType(data.theForm, data.exclusionRadius).Length == 0
                 foundMarkers[numFoundMarkers] = markers[i]
                 numFoundMarkers += 1
                 If numFoundMarkers == foundMarkers.Length
@@ -85,16 +91,19 @@ Function PumpQueue()
     EndWhile
 
     If numFoundMarkers == 0
-        Debug.Trace("SafeSpawnBaseScript::PumpQueue -- no markers between " + data.minDistance + " and " + data.maxDistance)
-        StartTimer(1.0, 0)
-        return
+        Debug.Trace("SafeSpawnBaseScript::PumpQueue -- no markers of " + markers.Length + " between " + data.minDistance + " and " + data.maxDistance)
+        EndPump()
+        return None
     EndIf
 
     ObjectReference foundMarker = foundMarkers[Utility.RandomInt(0, numFoundMarkers - 1)]
     i = 0
-    while i < data.quantity
+    Int quantity = Utility.RandomInt(data.minQuantity, data.maxQuantity)
+    ObjectReference[] spawned = new ObjectReference[quantity]
+    while i < quantity
         CC.PingUpdateTimer()
-        ObjectReference spawned = foundMarker.PlaceAtMe(data.theForm)
+        Debug.Trace("SafeSpawnBaseScript::PumpQueue -- spawning " + i + " of " + quantity)
+        ObjectReference thisSpawn = foundMarker.PlaceAtMe(data.theForm)
         Float offsetX = 0
         Float offsetY = 0
         If data.radius
@@ -103,8 +112,9 @@ Function PumpQueue()
             offsetX = Math.Cos(randomAngle) * randomDistance
             offsetY = Math.Sin(randomAngle) * randomDistance
         EndIf
-        spawned.MoveTo(foundMarker, offsetX, offsetY)
-        spawned.SetAngle(0.0, spawned.GetAngleY(), spawned.GetAngleZ())
+        thisSpawn.MoveTo(foundMarker, offsetX, offsetY)
+        thisSpawn.SetAngle(0.0, thisSpawn.GetAngleY(), thisSpawn.GetAngleZ())
+        spawned[i] = thisSpawn
         i += 1
     EndWhile
 
@@ -117,6 +127,12 @@ Function PumpQueue()
     Queue[i] = None
     QueueSize -= 1
 
-    Debug.Trace("SafeSpawnBaseScript::PumpQueue -- spawned " + data.quantity)
+    Debug.Trace("SafeSpawnBaseScript::PumpQueue -- done spawning")
+    EndPump()
+    return spawned
+EndFunction
+
+
+Function EndPump()
     StartTimer(1.0, 0)
 EndFunction

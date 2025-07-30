@@ -100,29 +100,36 @@ namespace CrowdControl.Games.Packs.Fallout4_Frost
 			#region Scares
 
 			new Effect("Frag Mine Scare", $"itemscare_crowdcontrol__{0x1BE6E}_1") { Price = GetPrice(5), Category = "Scares" },
-			new Effect("Frag Grenade Bouqet Scare", $"spellscare_crowdcontrol__{0x1BE81}_1") { Price = GetPrice(5), Category = "Scares" },
+			new Effect("Grenade Bouquet Scare", $"spellscare_crowdcontrol__{0x1BE81}_1") { Price = GetPrice(5), Category = "Scares" },
 
 			#endregion
 
 			#region Radiation
 
-			new Effect("Small Hotspot", $"addradiation_0") { Price = GetPrice(5), Category = "Radiation" },
-			new Effect("Medium Hotspot", $"addradiation_1") { Price = GetPrice(5), Category = "Radiation" },
-			new Effect("Large Hotspot", $"addradiation_2") { Price = GetPrice(5), Category = "Radiation" },
+			new Effect("Small Hotspot", $"addradiation_0") { Description = "3 rad/s", Price = GetPrice(5), Category = "Radiation" },
+			new Effect("Medium Hotspot", $"addradiation_1") { Description = "6 rad/s", Price = GetPrice(5), Category = "Radiation" },
+			new Effect("Large Hotspot", $"addradiation_2") { Description = "9 rad/s", Price = GetPrice(5), Category = "Radiation" },
+
+			#endregion
+
+			#region Hostile Creatures
+
+			new Effect("Feral Ghouls (2-3)", $"spawnstalkers_{0x75337}_2~3_1500~3000") { Price = GetPrice(20), Category = "Hostile Creatures" },
+			new Effect("Glowing One (1)", $"spawnstalkers_{0xD39EF}_1_1500~3000") { Price = GetPrice(25), Category = "Hostile Creatures" },
 
 			#endregion
 
 			#region Hostile NPCs
 
-			new Effect("Feral Ghouls (5)", $"spawnstalkers_{0x75337}_5_1500_3000") { Price = GetPrice(20), Category = "Spawn Hostile NPC" },
-			new Effect("Glowing Ones (3)", $"spawnstalkers_{0xD39EF}_3_1500_3000") { Price = GetPrice(25), Category = "Spawn Hostile NPC" },
-			new Effect("Maldenmen (2)", $"spawnstalkers_frost__{0x6B45F}_2_1500_3000") { Price = GetPrice(25), Category = "Spawn Hostile NPC" },
+			new Effect("Survivors (2-4)", $"spawnstalkers_{0x2BEA0}_2~4_1500~3000") { Price = GetPrice(25), Category = "Hostile NPCs" },
+			new Effect("Raiders (3-4)", $"spawnstalkers_{0x22E48}_3-4_1500~3000") { Price = GetPrice(25), Category = "Hostile Creatures" },
+			new Effect("Maldenmen (1-2)", $"spawnstalkers_frost__{0x6B45F}_1~2_1500~3000") { Price = GetPrice(25), Category = "Hostile NPCs" },
 
 			#endregion
 
 			#region Hazards
 
-			new Effect("Frag Mine Cluster (3)", $"hazard_{0xE56C3}_3_500_1500_32_64") { Price = GetPrice(25), Category = "Hazards" },
+			new Effect("Frag Mine Cluster (2-4)", $"hazard_{0xE56C3}_2~4_500~1500_32_64") { Price = GetPrice(25), Category = "Hazards" },
 
 			#endregion
 

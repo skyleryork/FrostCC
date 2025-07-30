@@ -15,9 +15,9 @@ Event OnEffectStart(Actor akTarget, Actor akCaster)
     EndWhile
     locked = True
 
-    ObjectReference marker = SpawnMarkerRef.GetReference()
-    TrapSound.Play(marker)
+    TrapSound.Play(akTarget)
 
+    ObjectReference marker = SpawnMarkerRef.GetReference()
     Int i = 0
     Int count = GrenadeCount
     While i < count
