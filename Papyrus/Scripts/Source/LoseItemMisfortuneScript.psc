@@ -61,6 +61,7 @@ Bool Function ApplyMisfortune()
     EndWhile
 
     If !item || index < 0
+        Debug.Trace("LoseItemMisfortuneScript: no item found of " + allItems.Length)
         return False
     EndIf
 
@@ -84,15 +85,18 @@ Event OnTimer(Int timerId)
         If Player.IsSprinting() || (Player.IsInPowerArmor() && Player.IsRunning())
             If Sprinting
                 SprintTime += PumpTimerInterval
+                Debug.Trace("Still sprinting for " + SprintTime)
                 If QueueSize && RollMisfortune() && ApplyMisfortune()
                     QueueSize -= 1
                     SprintTime = 0.0
                 EndIf
             Else
+                Debug.Trace("Started sprinting")
                 Sprinting = True
-                SprintTime = 0.0
+                ; SprintTime = 0.0
             EndIf
         Else
+            Debug.Trace("Ended sprinting")
             Sprinting = False
         EndIf
     EndIf

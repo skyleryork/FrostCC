@@ -25,12 +25,6 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 cd /D %CompilerPath%
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-REM F4SE scripts
-for %%F in ("%F4SEScriptSourcePath%\*.psc") do (
-    start "" /B cmd /c PapyrusCompiler.exe "%%F" -f="Institute_Papyrus_Flags.flg" -i="%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%PexPath%" -op
-)
-
-REM CrowdControl scripts
 for %%F in ("%PscPath%\*.psc") do (
     start "" /B cmd /c PapyrusCompiler.exe "%%F" -f="Institute_Papyrus_Flags.flg" -i="%F4SEScriptSourcePath%;%PscPath%;%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%PexPath%" -op
 )

@@ -24,6 +24,8 @@
 #include "f4se/PluginAPI.h"
 #include "f4se/PapyrusGame.h"
 #include "f4se/GameTypes.h"
+#include "f4se/GameObjects.h"
+#include "f4se/GameRTTI.h"
 
 #include "f4se/PapyrusVM.h"
 #include "f4se/PapyrusNativeFunctions.h"
@@ -700,6 +702,52 @@ float GetFloatSetting(StaticFunctionTag*, BSFixedString section, BSFixedString k
 
 
 //
+// Papyrus
+//
+
+namespace papyrusFormList
+{
+
+VMArray<SInt32> FindFormKeywords( BGSListForm *const thisFormList, VMArray<TESForm *> forms )
+{
+	VMArray<SInt32> indices;
+
+	if ( thisFormList )
+	{
+		for ( UInt32 i = 0; i < forms.Length(); ++i )
+		{
+			SInt32 index = -1;
+			TESForm *form;
+			forms.Get( &form, i );
+
+			BGSKeywordForm *const pKeywords = DYNAMIC_CAST( form, TESForm, BGSKeywordForm );
+			if ( pKeywords )
+			{
+				for ( UInt32 j = 0; ( index < 0 ) && ( j < pKeywords->numKeywords ); ++j )
+				{
+					for ( UInt32 k = 0; k < thisFormList->forms.count; ++k )
+					{
+						BGSKeyword *const keywordForm = DYNAMIC_CAST( thisFormList->forms.entries[k], TESForm, BGSKeyword );
+						if ( keywordForm && ( keywordForm == pKeywords->keywords[j] ) )
+						{
+							index = k;
+							break;
+						}
+					}
+				}
+			}
+
+			indices.Push( &index );
+		}
+	}
+
+	return indices;
+}
+
+}
+
+
+//
 // Chance
 //
 
@@ -839,10 +887,13 @@ bool RegisterFuncs(VirtualMachine * a_registry)
 	a_registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, BSFixedString, BSFixedString>("GetName", "CrowdControlApi", CrowdControlGetName, a_registry));
 	a_registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, BSFixedString, SInt32>("GetNameId", "CrowdControlApi", CrowdControlGetNameId, a_registry));
 
+	// Papyrus
+	a_registry->RegisterFunction( new NativeFunction1<BGSListForm, VMArray<SInt32>, VMArray<TESForm *>>( "FindFormKeywords", "FormList", papyrusFormList::FindFormKeywords, a_registry ) );
+
 	// Chance
 	//a_registry->RegisterFunction(new NativeFunction0<StaticFunctionTag, SInt32>("AllocRNG", "ChanceApi", chance::api::AllocRNG, a_registry));
-	a_registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, VMArray<SInt32>, SInt32, SInt32>("ShuffledIndices", "ChanceApi", chance::api::ShuffledIndices, a_registry));
-	a_registry->RegisterFunction(new NativeFunction9<StaticFunctionTag, TESForm*, BGSListForm*, VMArray<SInt32>, float, SInt32, BGSListForm*, BGSListForm*, BGSListForm*, BGSListForm*, BGSListForm*>("Roll", "ChanceApi", chance::api::Roll, a_registry));
+	a_registry->RegisterFunction( new NativeFunction2<StaticFunctionTag, VMArray<SInt32>, SInt32, SInt32>( "ShuffledIndices", "ChanceApi", chance::api::ShuffledIndices, a_registry ) );
+	a_registry->RegisterFunction( new NativeFunction9<StaticFunctionTag, TESForm *, BGSListForm *, VMArray<SInt32>, float, SInt32, BGSListForm *, BGSListForm *, BGSListForm *, BGSListForm *, BGSListForm *>( "Roll", "ChanceApi", chance::api::Roll, a_registry ) );
 
 	return true;
 }
