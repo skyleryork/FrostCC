@@ -32,6 +32,16 @@ Int[] ForceLockTierCounts = None
 Int[] ForceUnockTierCounts = None
 
 
+Float Function CalculateChance(Float chancePerEvent, Int events) Global
+    return 1.0 - Math.Pow(1.0 - chancePerEvent, events)
+EndFunction
+
+
+Float Function CalcuateTimedChance(Float chancePerSecond, Float seconds) Global
+    return 1.0 - Math.Exp(Math.Log(1.0 - chancePerSecond) * seconds)
+EndFunction
+
+
 Int Function LockLevelToTier(Int level) Global
     return level / 25
 EndFunction
@@ -120,18 +130,18 @@ EndFunction
 ; junk, common, rare, epic, legendary
 Form[] Function RollByLockTier(Int tier, Int filterBits)
     Form[] rolled = new Form[5]
-    rolled[0] = ChanceApi.Roll(0, JunkItems, JunkItemCounts, 1 - Math.Pow(1 - JunkChance, tier + 1), filterBits, FoodItems, ChemItems, AmmoItems, ValuableItems, ToolItems)
+    rolled[0] = ChanceApi.Roll(JunkItems, JunkItemCounts, CalculateChance(JunkChance, tier + 1), filterBits, FoodItems, ChemItems, AmmoItems, ValuableItems, ToolItems)
     If tier >= 1
-        rolled[1] = ChanceApi.Roll(0, CommonItems, CommonItemCounts, 1 - Math.Pow(1 - CommonChance, tier), filterBits, FoodItems, ChemItems, AmmoItems, ValuableItems, ToolItems)
+        rolled[1] = ChanceApi.Roll(CommonItems, CommonItemCounts, CalculateChance(CommonChance, tier), filterBits, FoodItems, ChemItems, AmmoItems, ValuableItems, ToolItems)
     EndIf
     If tier >= 2
-        rolled[2] = ChanceApi.Roll(0, RareItems, RareItemCounts, 1 - Math.Pow(1 - RareChance, tier - 1), filterBits, FoodItems, ChemItems, AmmoItems, ValuableItems, ToolItems)
+        rolled[2] = ChanceApi.Roll(RareItems, RareItemCounts, CalculateChance(RareChance, tier - 1), filterBits, FoodItems, ChemItems, AmmoItems, ValuableItems, ToolItems)
     EndIf
     If tier >= 3
-        rolled[3] = ChanceApi.Roll(0, EpicItems, EpicItemCounts, 1 - Math.Pow(1 - EpicChance, tier - 2), filterBits, FoodItems, ChemItems, AmmoItems, ValuableItems, ToolItems)
+        rolled[3] = ChanceApi.Roll(EpicItems, EpicItemCounts, CalculateChance(EpicChance, tier - 2), filterBits, FoodItems, ChemItems, AmmoItems, ValuableItems, ToolItems)
     EndIf
     If tier >= 4
-        rolled[4] = ChanceApi.Roll(0, LegendaryItems, LegendaryItemCounts, 1 - Math.Pow(1 - LegendaryChance, tier - 3), filterBits, FoodItems, ChemItems, AmmoItems, ValuableItems, ToolItems)
+        rolled[4] = ChanceApi.Roll(LegendaryItems, LegendaryItemCounts, CalculateChance(LegendaryChance, tier - 3), filterBits, FoodItems, ChemItems, AmmoItems, ValuableItems, ToolItems)
     EndIf
     return rolled
 EndFunction
@@ -139,7 +149,7 @@ EndFunction
 
 ; returns the new tier
 Int Function RollLock()
-    Int[] indices = ChanceApi.ShuffledIndices(0, 4, 1)
+    Int[] indices = ChanceApi.ShuffledIndices(4, 1)
     Int rollCount = 0
     Bool rolled = True
     While rolled

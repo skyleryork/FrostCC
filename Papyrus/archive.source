@@ -1,13 +1,22 @@
-C:\Program Files (x86)\Steam\steamapps\common\Fallout 4\Data\Scripts\Actor.pex
-C:\Program Files (x86)\Steam\steamapps\common\Fallout 4\Data\Scripts\CrowdControl.pex
-C:\Program Files (x86)\Steam\steamapps\common\Fallout 4\Data\Scripts\CrowdControlApi.pex
-C:\Program Files (x86)\Steam\steamapps\common\Fallout 4\Data\Scripts\Fragments\Quests\QF_CrowdControlQuest_01000F99.pex
-C:\Program Files (x86)\Steam\steamapps\common\Fallout 4\Data\Scripts\Chance.pex 
-C:\Program Files (x86)\Steam\steamapps\common\Fallout 4\Data\Scripts\ChanceApi.pex 
-C:\Program Files (x86)\Steam\steamapps\common\Fallout 4\Data\Scripts\ChanceContainer.pex 
-C:\Program Files (x86)\Steam\steamapps\common\Fallout 4\Data\Scripts\CrowdControl.pex 
-C:\Program Files (x86)\Steam\steamapps\common\Fallout 4\Data\Scripts\CrowdControlApi.pex 
-C:\Program Files (x86)\Steam\steamapps\common\Fallout 4\Data\Scripts\DudMineActivator.pex 
-C:\Program Files (x86)\Steam\steamapps\common\Fallout 4\Data\Scripts\DudMineEffect.pex 
-C:\Program Files (x86)\Steam\steamapps\common\Fallout 4\Data\Scripts\FragMineScare.pex 
-C:\Program Files (x86)\Steam\steamapps\common\Fallout 4\Data\Scripts\lockExtraLootSCRIPT.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\Actor.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\Chance.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\ChanceApi.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\ChanceContainer.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\ContaminationMisfortuneScript.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\CrowdControl.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\CrowdControlApi.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\DudMineActivator.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\DudMineEffect.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\Form.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\FormList.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\FragGrenadeTrapScareScript.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\FragMineScare.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\FungalAerosolScript.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\HazardSpawnScript.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\HostileSpawnScript.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\lockExtraLootSCRIPT.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\LoseItemMisfortuneScript.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\ObjectReference.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\RadiationHotspotScript.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\SafeSpawnBaseScript.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\Fragments\Quests\QF_CrowdControlQuest_01000F99.pex 

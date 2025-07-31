@@ -7,6 +7,7 @@
 
 #include "f4se/PapyrusF4SE.h"
 #include "f4se/PapyrusForm.h"
+#include "f4se/PapyrusFormList.h"
 #include "f4se/PapyrusMath.h"
 #include "f4se/PapyrusActor.h"
 #include "f4se/PapyrusActorBase.h"
@@ -103,6 +104,9 @@ void RegisterPapyrusFunctions_Hook(VirtualMachine ** vmPtr)
 
 	// Form
 	papyrusForm::RegisterFuncs(vm);
+
+	// FormList
+	papyrusFormList::RegisterFuncs(vm);
 
 	// ObjectReference
 	papyrusObjectReference::RegisterFuncs(vm);

@@ -100,7 +100,7 @@ namespace CrowdControl.Games.Packs.Fallout4_Frost
 			#region Scares
 
 			new Effect("Frag Mine Scare", $"itemscare_crowdcontrol__{0x1BE6E}_1") { Price = GetPrice(5), Category = "Scares" },
-			new Effect("Grenade Bouquet Scare", $"spellscare_crowdcontrol__{0x1BE81}_1") { Price = GetPrice(5), Category = "Scares" },
+			new Effect("Grenade Bouquet Scare", $"addspell_crowdcontrol__{0x1BE81}") { Price = GetPrice(5), Category = "Scares" },
 
 			#endregion
 
@@ -121,15 +121,21 @@ namespace CrowdControl.Games.Packs.Fallout4_Frost
 
 			#region Hostile NPCs
 
-			new Effect("Survivors (2-4)", $"spawnstalkers_{0x2BEA0}_2~4_1500~3000") { Price = GetPrice(25), Category = "Hostile NPCs" },
-			new Effect("Raiders (3-4)", $"spawnstalkers_{0x22E48}_3-4_1500~3000") { Price = GetPrice(25), Category = "Hostile Creatures" },
+			new Effect("Survivors (2-3)", $"spawnstalkers_{0x22E48}_2~3_1500~3000") { Price = GetPrice(25), Category = "Hostile NPCs" },
 			new Effect("Maldenmen (1-2)", $"spawnstalkers_frost__{0x6B45F}_1~2_1500~3000") { Price = GetPrice(25), Category = "Hostile NPCs" },
 
 			#endregion
 
 			#region Hazards
 
-			new Effect("Frag Mine Cluster (2-4)", $"hazard_{0xE56C3}_2~4_500~1500_32_64") { Price = GetPrice(25), Category = "Hazards" },
+			new Effect("Frag Mine Cluster (1-2)", $"hazard_{0xE56C3}_2~4_500~1500_32_512") { Price = GetPrice(25), Category = "Hazards" },
+
+			#endregion
+
+			#region Misfortunes
+
+			new Effect("Bottle Breaks", $"breakbottle") { Price = GetPrice(25), Category = "Misfortunes" },
+			new Effect("Contaminated Water", $"contaminatedwater") { Price = GetPrice(25), Category = "Misfortunes" },
 
 			#endregion
 

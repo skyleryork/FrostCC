@@ -12,6 +12,10 @@ Struct SpawnData
 EndStruct
 
 
+Int Property PumpTimerId = 1 AutoReadOnly
+Float Property PumpTimerInterval = 1.0 AutoReadOnly
+
+
 Int Property MaxQueue Auto Mandatory
 Int Property SpawnMarkerCount Auto Mandatory
 Float Property SpawnDelay Auto Mandatory
@@ -23,6 +27,7 @@ Actor Player = None
 SpawnData[] Queue = None
 Int QueueSize = 0
 Float LastSpawn = 0.0
+Bool locked = False
 
 
 Function Init()
@@ -38,34 +43,50 @@ Function Init()
         Queue = new SpawnData[MaxQueue]
     EndIf
 
-    CancelTimer(0)
-    EndPump()
+    StartTimer(PumpTimerInterval, PumpTimerId)
+EndFunction
+
+
+Function Lock()
+    While locked
+        Utility.Wait(0.2)
+    EndWhile
+    locked = True
+EndFunction
+
+
+Function Unlock()
+    locked = False
 EndFunction
 
 
 Bool Function QueueSpawn(SpawnData data)
-    Debug.Trace("QueueSpawn: " + QueueSize + " of " + Queue.Length)
+    Lock()
+
+    Debug.Trace("SafeSpawnBaseScript::QueueSpawn: " + (QueueSize + 1) + " of " + Queue.Length)
     If QueueSize == Queue.Length
+        Unlock()
         return False
     EndIf
 
     Queue[QueueSize] = data
     QueueSize += 1
+
+    Unlock()
     return True
 EndFunction
 
 
-ObjectReference[] Function PumpQueue()
-    ;Debug.Trace("SafeSpawnBaseScript::PumpQueue...")
+ObjectReference[] Function PumpQueue(Bool enableSpawns = True)
     If QueueSize == 0
         Debug.Trace("SafeSpawnBaseScript::PumpQueue -- empty")
-        EndPump()
+        StartTimer(PumpTimerInterval, PumpTimerId)
         return None
     EndIf
 
     If ( Utility.GetCurrentRealTime() - LastSpawn ) < SpawnDelay
         Debug.Trace("SafeSpawnBaseScript::PumpQueue -- too soon")
-        EndPump()
+        StartTimer(PumpTimerInterval, PumpTimerId)
         return None
     EndIf
 
@@ -92,18 +113,29 @@ ObjectReference[] Function PumpQueue()
 
     If numFoundMarkers == 0
         Debug.Trace("SafeSpawnBaseScript::PumpQueue -- no markers of " + markers.Length + " between " + data.minDistance + " and " + data.maxDistance)
-        EndPump()
+        StartTimer(PumpTimerInterval, PumpTimerId)
         return None
     EndIf
 
+    ; lock to update queue
+    Lock()
+    i = 0
+    While i < ( QueueSize - 1 )
+        Queue[i] = Queue[i + 1]
+        i += 1
+    EndWhile
+    Queue[i] = None
+    QueueSize -= 1
+    Unlock()
+    
     ObjectReference foundMarker = foundMarkers[Utility.RandomInt(0, numFoundMarkers - 1)]
     i = 0
     Int quantity = Utility.RandomInt(data.minQuantity, data.maxQuantity)
     ObjectReference[] spawned = new ObjectReference[quantity]
     while i < quantity
         CC.PingUpdateTimer()
-        Debug.Trace("SafeSpawnBaseScript::PumpQueue -- spawning " + i + " of " + quantity)
-        ObjectReference thisSpawn = foundMarker.PlaceAtMe(data.theForm)
+        Debug.Trace("SafeSpawnBaseScript::PumpQueue -- spawning " + (i + 1) + " of " + quantity)
+        ObjectReference thisSpawn = foundMarker.PlaceAtMe(data.theForm, abInitiallyDisabled = True)
         Float offsetX = 0
         Float offsetY = 0
         If data.radius
@@ -114,25 +146,16 @@ ObjectReference[] Function PumpQueue()
         EndIf
         thisSpawn.MoveTo(foundMarker, offsetX, offsetY)
         thisSpawn.SetAngle(0.0, thisSpawn.GetAngleY(), thisSpawn.GetAngleZ())
+        If enableSpawns
+            thisSpawn.Enable()
+        EndIf
         spawned[i] = thisSpawn
         i += 1
     EndWhile
 
     LastSpawn = Utility.GetCurrentRealTime()
-
-    i = 0
-    While i < ( QueueSize - 1 )
-        Queue[i] = Queue[i + 1]
-    EndWhile
-    Queue[i] = None
-    QueueSize -= 1
+    StartTimer(PumpTimerInterval, PumpTimerId)
 
     Debug.Trace("SafeSpawnBaseScript::PumpQueue -- done spawning")
-    EndPump()
     return spawned
-EndFunction
-
-
-Function EndPump()
-    StartTimer(1.0, 0)
 EndFunction

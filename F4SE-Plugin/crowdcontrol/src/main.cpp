@@ -746,10 +746,10 @@ SInt32 AllocRNG( StaticFunctionTag * )
 }
 
 
-VMArray<SInt32> ShuffledIndices( StaticFunctionTag *, SInt32 rngIndex, SInt32 count, SInt32 start )
+VMArray<SInt32> ShuffledIndices( StaticFunctionTag *, SInt32 count, SInt32 start )
 {
 	VMArray<SInt32> result;
-	if ( const auto rng = lib::GetRNG( rngIndex ) )
+	if ( const auto rng = lib::GetRNG( 0 ) )
 	{
 		for ( SInt32 index : lib::ShuffledIndices( *rng, count, start ) )
 		{
@@ -760,16 +760,16 @@ VMArray<SInt32> ShuffledIndices( StaticFunctionTag *, SInt32 rngIndex, SInt32 co
 }
 
 
-TESForm *Roll( StaticFunctionTag *, SInt32 rngIndex, BGSListForm *items, VMArray<SInt32> counts, float rollChance, SInt32 filterBits, BGSListForm *foodFilter, BGSListForm *chemFilter, BGSListForm *ammoFilter, BGSListForm *valuableFilter, BGSListForm *toolFilter )
+TESForm *Roll( StaticFunctionTag *, BGSListForm *items, VMArray<SInt32> counts, float rollChance, SInt32 filterBits, BGSListForm *foodFilter, BGSListForm *chemFilter, BGSListForm *ammoFilter, BGSListForm *valuableFilter, BGSListForm *toolFilter )
 {
-	_MESSAGE("ChanceApi::Roll - rngIndex: %i, rollChance: %f", rngIndex, rollChance);
+	_MESSAGE("ChanceApi::Roll - rngIndex: %i, rollChance: %f", 0, rollChance);
 
 	if ( rollChance <= 0.0f )
 	{
 		return nullptr;
 	}
 
-	if ( const auto rng = lib::GetRNG( rngIndex ) )
+	if ( const auto rng = lib::GetRNG( 0 ) )
 	{
 		for ( SInt32 index : lib::ShuffledIndices( *rng, counts.Length() ) )
 		{
@@ -840,9 +840,9 @@ bool RegisterFuncs(VirtualMachine * a_registry)
 	a_registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, BSFixedString, SInt32>("GetNameId", "CrowdControlApi", CrowdControlGetNameId, a_registry));
 
 	// Chance
-	a_registry->RegisterFunction(new NativeFunction0<StaticFunctionTag, SInt32>("AllocRNG", "ChanceApi", chance::api::AllocRNG, a_registry));
-	a_registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, VMArray<SInt32>, SInt32, SInt32, SInt32>("ShuffledIndices", "ChanceApi", chance::api::ShuffledIndices, a_registry));
-	a_registry->RegisterFunction(new NativeFunction10<StaticFunctionTag, TESForm*, SInt32, BGSListForm*, VMArray<SInt32>, float, SInt32, BGSListForm*, BGSListForm*, BGSListForm*, BGSListForm*, BGSListForm*>("Roll", "ChanceApi", chance::api::Roll, a_registry));
+	//a_registry->RegisterFunction(new NativeFunction0<StaticFunctionTag, SInt32>("AllocRNG", "ChanceApi", chance::api::AllocRNG, a_registry));
+	a_registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, VMArray<SInt32>, SInt32, SInt32>("ShuffledIndices", "ChanceApi", chance::api::ShuffledIndices, a_registry));
+	a_registry->RegisterFunction(new NativeFunction9<StaticFunctionTag, TESForm*, BGSListForm*, VMArray<SInt32>, float, SInt32, BGSListForm*, BGSListForm*, BGSListForm*, BGSListForm*, BGSListForm*>("Roll", "ChanceApi", chance::api::Roll, a_registry));
 
 	return true;
 }

@@ -93,6 +93,7 @@
     <ClCompile Include="PapyrusF4SE.cpp" />
     <ClCompile Include="PapyrusFavoritesManager.cpp" />
     <ClCompile Include="PapyrusForm.cpp" />
+    <ClCompile Include="PapyrusFormList.cpp" />
     <ClCompile Include="PapyrusGame.cpp" />
     <ClCompile Include="PapyrusHeadPart.cpp" />
     <ClCompile Include="PapyrusInput.cpp" />
@@ -213,6 +214,7 @@
     <ClInclude Include="PapyrusF4SE.h" />
     <ClInclude Include="PapyrusFavoritesManager.h" />
     <ClInclude Include="PapyrusForm.h" />
+    <ClInclude Include="PapyrusFormList.h" />
     <ClInclude Include="PapyrusGame.h" />
     <ClInclude Include="PapyrusHeadPart.h" />
     <ClInclude Include="PapyrusInput.h" />

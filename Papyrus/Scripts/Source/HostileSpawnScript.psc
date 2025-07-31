@@ -19,8 +19,8 @@ EndEvent
 
 
 Event OnTimer(Int timerId)
-    If timerId == 0
-        ObjectReference[] spawned = PumpQueue()
+    If timerId == PumpTimerId
+        ObjectReference[] spawned = PumpQueue(False)
         If spawned != None
             Int i = 0
             While i < spawned.Length
@@ -28,11 +28,13 @@ Event OnTimer(Int timerId)
                 Faction theFaction = theActor.GetFactionOwner()
                 If theFaction != None && !theFaction.IsPlayerEnemy()
                     theActor.AddToFaction(PlayerEnemyFaction)
-                    theActor.StopCombat()
                 EndIf
+                theActor.StopCombat()
                 If theActor.GetValue(Game.GetAggressionAV()) < 2
                     theActor.SetValue(Game.GetAggressionAV(), 2)
                 EndIf
+                theActor.MoveToNearestNavmeshLocation()
+                theActor.Enable()
                 i += 1
             EndWhile
         EndIf

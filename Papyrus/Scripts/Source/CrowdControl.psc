@@ -6,6 +6,7 @@ Chance CH = None
 RadiationHotspotScript RadiationHotspot = None
 HostileSpawnScript HostileSpawn = None
 HazardSpawnScript HazardSpawn = None
+LoseItemMisfortuneScript LoseItemMisfortune = None
 
 Int[] ItemDie = None
 Int[] ItemResults = None
@@ -94,6 +95,10 @@ Function InitVars()
     If HazardSpawn == None
         HazardSpawn = GetOwningQuest().GetAlias(0) as HazardSpawnScript
 	Endif
+
+    If LoseItemMisfortune == None
+        LoseItemMisfortune = GetOwningQuest().GetAlias(0) as LoseItemMisfortuneScript
+    EndIf
 EndFunction
 
 Event OnCellLoad()
@@ -277,6 +282,7 @@ EndFunction
 Struct ParsedCommand
     String command
     String id
+    String quantity
     Int minQuantity
     Int maxQuantity
     int duration
@@ -298,13 +304,14 @@ ParsedCommand Function ParseCrowdControlCommand(CrowdControlApi:CrowdControlComm
    
     r.command = ccCommand.command
     r.id = ccCommand.param0
+    r.quantity = ccCommand.param1
 
-    If CrowdControlApi.StringContains(ccCommand.param1, "~")
-        string[] quantities = CrowdControlApi.StringSplit(ccCommand.param1, "~")
+    If CrowdControlApi.StringContains(r.quantity, "~")
+        string[] quantities = CrowdControlApi.StringSplit(r.quantity, "~")
         r.minQuantity = quantities[0] as Int
         r.maxQuantity = quantities[1] as Int
     Else
-        r.minQuantity = ccCommand.param1 as Int
+        r.minQuantity = r.quantity as Int
         r.maxQuantity = r.minQuantity
     EndIf
 
@@ -524,13 +531,18 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
             Respond(id, 1, status)
             PrintMessage(status)
         EndIf
-    
-    elseif command.command == "spellscare"
+
+    elseif command.command == "addspell"
         (FindForm(command.id) as Spell).Cast(player)
 
         Respond(id, 0, status)
         PrintMessage(status)
-
+    
+    elseif command.command == "loseitemmisfortune"
+        LoseItemMisfortune.Queue()
+        Respond(id, 0, status)
+        PrintMessage(status)
+    
     elseif command.command == "spawnstalkers"
         SafeSpawnBaseScript:SpawnData data = MakeSpawnData(command)
 

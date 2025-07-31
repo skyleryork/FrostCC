@@ -326,6 +326,9 @@
     <ClCompile Include="GameHandle.cpp">
       <Filter>api</Filter>
     </ClCompile>
+    <ClCompile Include="PapyrusFormList.cpp">
+      <Filter>papyrus\functions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />
@@ -707,6 +710,9 @@
     </ClInclude>
     <ClInclude Include="GameHandle.h">
       <Filter>api</Filter>
+    </ClInclude>
+    <ClInclude Include="PapyrusFormList.h">
+      <Filter>papyrus\functions</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

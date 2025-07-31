@@ -12,7 +12,7 @@ EndEvent
 
 
 Event OnTimer(Int timerId)
-    If timerId == 0
+    If timerId == PumpTimerId
         PumpQueue()
     EndIf
 EndEvent

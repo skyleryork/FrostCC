@@ -10,7 +10,7 @@ Float Property DudChance Auto
 Event OnEffectStart(Actor akTarget, Actor akCaster)
     ObjectReference[] FoundMines = new ObjectReference[8]
     Int NextFoundMine = 0
-    Int[] indices = ChanceApi.ShuffledIndices(0, Mines.Length)
+    Int[] indices = ChanceApi.ShuffledIndices(Mines.Length)
     While True
         Int i = 0
         While i < indices.Length
