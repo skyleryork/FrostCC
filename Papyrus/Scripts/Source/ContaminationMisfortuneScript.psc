@@ -1,13 +1,19 @@
 Scriptname ContaminationMisfortuneScript extends ReferenceAlias
 
 
+Int Property PumpTimerId = 1 AutoReadOnly
+Float Property PumpTimerInterval = 1 AutoReadOnly
+
+
 Float Property MisfortuneChance Auto Mandatory
-Form[] Property Pristine Auto Mandatory
-Form[] Property Contaminated Auto Mandatory
+FormList Property Pristine Auto Mandatory
+FormList Property Contaminated Auto Mandatory
 
 
 Actor Player = None
 Int QueueSize = 0
+Bool InRadiation = False
+Float IrradiatedTime = 0.0
 
 
 Function Queue()
@@ -16,7 +22,7 @@ EndFunction
 
 
 Event OnInit()
-    If Pristine.Length != Contaminated.Length
+    If Pristine.GetSize() != Contaminated.GetSize()
         Debug.Trace("ContaminationMisfortuneScript: Pristine.Length != Contaminated.Length")
     EndIf
 
@@ -25,45 +31,61 @@ Event OnInit()
     EndIf
 
     RegisterForRadiationDamageEvent(Player)
+    StartTimer(PumpTimerInterval, PumpTimerId)
 EndEvent
 
 
 Bool Function RollMisfortune()
-    return Utility.RandomFloat() < Chance.CalculateChance(MisfortuneChance, QueueSize)
+    return Utility.RandomFloat() < Chance.CalcuateTimedChance(Chance.CalculateChance(MisfortuneChance, QueueSize), IrradiatedTime)
 EndFunction
 
 
 Bool Function ApplyMisfortune()
     Form[] allItems = Player.GetInventoryItems()
-    Int[] filtered = new Int[allItems.Length]
-    Int count = 0
-    Int i = 0
     Int[] indices = ChanceApi.ShuffledIndices(allItems.Length)
+    
+    Form item = None
+    Form replaceItem = None
+    Int i = 0
     While i < indices.Length
         Int j = indices[i]
         Int k = Pristine.Find(allItems[j])
         If k >= 0
-            filtered[count] = k
-            count += 1
+            item = allItems[j]
+            replaceItem = Contaminated.GetAt(k)
+            i = indices.Length
         EndIf
         i += 1
     EndWhile
 
-    If count == 0
+    If !item || !replaceItem
         return False
     EndIf
 
-    i = filtered[Utility.RandomInt(0, count - 1)]
-    Player.RemoveItem(Pristine[i])
-    Player.AddItem(Contaminated[i])
+    Player.RemoveItem(item)
+    Player.AddItem(replaceItem)
 
     return True
 EndFunction
 
 
 Event OnRadiationDamage(ObjectReference akTarget, bool abIngested)
-    If !abIngested && QueueSize && RollMisfortune() && ApplyMisfortune()
-        QueueSize -= 1
-    EndIf
+    InRadiation = True
     RegisterForRadiationDamageEvent(Player)
+EndEvent
+
+
+Event OnTimer(Int timerId)
+    If timerId == PumpTimerId
+        If InRadiation
+            IrradiatedTime += PumpTimerInterval
+            If !abIngested && QueueSize && RollMisfortune() && ApplyMisfortune()
+                QueueSize -= 1
+            EndIf
+            InRadiation = False
+        Else
+            IrradiatedTime = 0.0
+        EndIf
+        StartTimer(PumpTimerInterval, PumpTimerId)
+    EndIf
 EndEvent

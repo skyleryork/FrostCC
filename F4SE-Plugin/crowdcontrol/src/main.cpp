@@ -888,7 +888,7 @@ bool RegisterFuncs(VirtualMachine * a_registry)
 	a_registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, BSFixedString, SInt32>("GetNameId", "CrowdControlApi", CrowdControlGetNameId, a_registry));
 
 	// Papyrus
-	a_registry->RegisterFunction( new NativeFunction1<BGSListForm, VMArray<SInt32>, VMArray<TESForm *>>( "FindFormKeywords", "FormList", papyrusFormList::FindFormKeywords, a_registry ) );
+	a_registry->RegisterFunction( new NativeFunction1<BGSListForm, VMArray<SInt32>, VMArray<TESForm *>>( "FindFormsByKeywords", "FormList", papyrusFormList::FindFormKeywords, a_registry ) );
 
 	// Chance
 	//a_registry->RegisterFunction(new NativeFunction0<StaticFunctionTag, SInt32>("AllocRNG", "ChanceApi", chance::api::AllocRNG, a_registry));

@@ -7,6 +7,7 @@ RadiationHotspotScript RadiationHotspot = None
 HostileSpawnScript HostileSpawn = None
 HazardSpawnScript HazardSpawn = None
 LoseItemMisfortuneScript LoseItemMisfortune = None
+ContaminationMisfortuneScript ContaminationMisfortune = None
 
 Int[] ItemDie = None
 Int[] ItemResults = None
@@ -98,6 +99,10 @@ Function InitVars()
 
     If LoseItemMisfortune == None
         LoseItemMisfortune = GetOwningQuest().GetAlias(0) as LoseItemMisfortuneScript
+    EndIf
+
+    If ContaminationMisfortune == None
+        ContaminationMisfortune = GetOwningQuest().GetAlias(0) as ContaminationMisfortuneScript
     EndIf
 EndFunction
 
@@ -540,6 +545,11 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
     
     elseif command.command == "loseitemmisfortune"
         LoseItemMisfortune.Queue()
+        Respond(id, 0, status)
+        PrintMessage(status)
+
+    elseif command.command == "contaminationmisfortune"
+        ContaminationMisfortune.Queue()
         Respond(id, 0, status)
         PrintMessage(status)
     

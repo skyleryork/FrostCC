@@ -2,7 +2,7 @@ Scriptname LoseItemMisfortuneScript extends ReferenceAlias
 
 
 Int Property PumpTimerId = 1 AutoReadOnly
-Float Property PumpTimerInterval = 0.5 AutoReadOnly
+Float Property PumpTimerInterval = 1 AutoReadOnly
 
 
 Float Property MisfortuneChance Auto Mandatory
@@ -23,6 +23,8 @@ EndFunction
 
 
 Event OnInit()
+    Debug.Trace("LoseItemMisfortuneScript: OnInit")
+
     If ( ItemKeywords.GetSize() != ItemSounds.GetSize() ) || ( ItemKeywords.GetSize() != ItemDetection.Length )
         Debug.Trace("LoseItemMisfortuneScript: mismatched property array lengths")
     EndIf
@@ -85,19 +87,20 @@ Event OnTimer(Int timerId)
         If Player.IsSprinting() || (Player.IsInPowerArmor() && Player.IsRunning())
             If Sprinting
                 SprintTime += PumpTimerInterval
-                Debug.Trace("Still sprinting for " + SprintTime)
+                Debug.Trace("LoseItemMisfortuneScript: Still sprinting for " + SprintTime)
                 If QueueSize && RollMisfortune() && ApplyMisfortune()
                     QueueSize -= 1
                     SprintTime = 0.0
                 EndIf
             Else
-                Debug.Trace("Started sprinting")
+                Debug.Trace("LoseItemMisfortuneScript: Started sprinting")
                 Sprinting = True
-                ; SprintTime = 0.0
+                SprintTime = 0.0
             EndIf
-        Else
-            Debug.Trace("Ended sprinting")
+        ElseIf Sprinting
+            Debug.Trace("LoseItemMisfortuneScript: Ended sprinting")
             Sprinting = False
         EndIf
+        StartTimer(PumpTimerInterval, PumpTimerId)
     EndIf
 EndEvent
