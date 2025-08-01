@@ -104,12 +104,6 @@ namespace CrowdControl.Games.Packs.Fallout4_Frost
 
 			#endregion
 
-			#region Radiation
-
-			new Effect("Add Radiation Hotspot Rank", $"addradiation") { Description = "3\\6\\9 rad/s", Price = GetPrice(5), Category = "Radiation" },
-
-			#endregion
-
 			#region Hostile Creatures
 
 			new Effect("Feral Ghouls (2-3)", $"spawnstalkers_{0x75337}_2~3_1500~3000") { Price = GetPrice(20), Category = "Hostile Creatures" },
@@ -126,14 +120,15 @@ namespace CrowdControl.Games.Packs.Fallout4_Frost
 
 			#region Hazards
 
+			new Effect("Radiation Hotspot", $"hazard__radiation") { Description = "Spawn a 3\\6\\9 rad/s radiation hazard.", Price = GetPrice(5), Category = "Hazards" },
 			new Effect("Frag Mine Cluster (1-2)", $"hazard_{0xE56C3}_2~4_500~1500_32_512") { Price = GetPrice(25), Category = "Hazards" },
 
 			#endregion
 
 			#region Misfortunes
 
-			new Effect("Lose Item", $"loseitemmisfortune") { Price = GetPrice(25), Category = "Misfortunes" },
-			new Effect("Contamination", $"contaminationmisfortune") { Price = GetPrice(25), Category = "Misfortunes" },
+			//new Effect("Lose Item", $"loseitemmisfortune") { Price = GetPrice(25), Category = "Misfortunes" },
+			new Effect("Contamination", $"misfortune__contamination") { Description = "Contaminate a random food item.", Price = GetPrice(25), Category = "Misfortunes" },
 
 			#endregion
 

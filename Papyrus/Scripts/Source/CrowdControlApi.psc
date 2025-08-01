@@ -36,8 +36,8 @@ int Function GetCommandCount() Global Native
 CrowdControlCommand Function GetCommand() Global Native
 
 Function ClearTimers() Global Native
-int Function GetIntSetting(string section, string key) Global Native
-float Function GetFloatSetting(string section, string key) Global Native
+int Function GetIntSetting(string section, string key, int default = 0) Global Native
+float Function GetFloatSetting(string section, string key, float default = 0) Global Native
 
 string[] Function StringSplit(string text, string delimiter) Global Native
 bool Function StringContains(string text, string delimiter) Global Native

@@ -11,7 +11,9 @@ Hazard[] Property RadiationHotspots Auto Const Mandatory
 Float[] Property RadiationHotspotSpacing Auto Const Mandatory
 Perk[] Property RadiationHotspotPerks Auto Const Mandatory
 Int[] Property RadiationHotspotRads Auto Const Mandatory
+
 Message Property RadiationMessage Auto Const Mandatory
+Message Property RadiationPerkMessage Auto Const Mandatory
 
 
 Actor Player = None
@@ -19,36 +21,53 @@ Float ScaledMisfortuneChance = 0.0
 
 
 Bool Function Add()
-    If Player.HasPerk(RadiationHotspotPerks[2])
-        return False
-    ElseIf Player.HasPerk(RadiationHotspotPerks[1])
-        Player.AddPerk(RadiationHotspotPerks[2], True)
-    ElseIf Player.HasPerk(RadiationHotspotPerks[0])
-        Player.AddPerk(RadiationHotspotPerks[1], True)
-    Else
-        Player.AddPerk(RadiationHotspotPerks[0], True)
+    Int i = 0
+    While i < RadiationHotspotPerks.Length
+        If !Player.HasPerk(RadiationHotspotPerks[i])
+            Player.AddPerk(RadiationHotspotPerks[i])
+            RadiationPerkMessage.Show(i + 1)
+            return True
+        EndIf
+        i += 1
+    EndWhile
+    return False
+EndFunction
+
+
+Function ParseSettings()
+    Float chanceSetting = CrowdControlApi.GetFloatSetting("Misfortunes", "RadiationHotspotChance", -1.0)
+    If chanceSetting < 0.0
+        chanceSetting = MisfortuneChance
     EndIf
-    return True
+
+    Float durationSetting = CrowdControlApi.GetFloatSetting("Misfortunes", "RadiationHotspotDuration", -1.0)
+    If durationSetting < 0.0
+        durationSetting = MisfortuneDuration
+    EndIf
+
+    ScaledMisfortuneChance = Chance.CalculateTimescaledChance(chanceSetting, durationSetting, PumpTimerInterval)
 EndFunction
 
 
 Event OnInit()
     Debug.Trace("RadiationHotspotMisfortuneScript: OnInit")
 
-    If RadiationHotspots.Length != RadiationHotspotSpacing.Length || RadiationHotspots.Length != RadiationHotspotPerks.Length || RadiationHotspots.Length != RadiationHotspotRads.Length
-        Debug.Trace("RadiationHotspotMisfortuneScript: RadiationHotspots/RadiationHotspotSpacing/RadiationHotspotPerks/RadiationHotspotRads size mismatch")
+    If RadiationHotspots.Length == 0 || RadiationHotspots.Length != RadiationHotspotSpacing.Length || RadiationHotspots.Length != RadiationHotspotPerks.Length || RadiationHotspots.Length != RadiationHotspotRads.Length
+        Debug.Trace("RadiationHotspotMisfortuneScript: RadiationHotspots/RadiationHotspotSpacing/RadiationHotspotPerks/RadiationHotspotRads empty or size mismatch")
     EndIf
 
     If Player == None
         Player = Game.GetPlayer()
     EndIf
 
-    If ScaledMisfortuneChance == 0.0
-        ScaledMisfortuneChance = Chance.CalculateTimescaledChance(MisfortuneChance, MisfortuneDuration, PumpTimerInterval)
-    EndIf
+    ParseSettings()
 
-    Utility.Wait(Utility.RandomFloat(0.0, PumpTimerInterval))
-    StartTimer(PumpTimerInterval, PumpTimerId)
+    StartTimer(Utility.RandomFloat(0.0, PumpTimerInterval), PumpTimerId)
+EndEvent
+
+
+Event OnPlayerLoadGame()
+    ParseSettings()
 EndEvent
 
 
@@ -60,17 +79,20 @@ Bool Function RollMisfortune()
 EndFunction
 
 
-Function ApplyMisfortune()
-    Int index = RadiationHotspotPerks.Length - 1
-    Bool found = False
-    While !found && (index > 0)
-        If Player.HasPerk(RadiationHotspotPerks[index])
-            found = True
-        Else
-            index -= 1
+Int Function HighestRankPerkIndex()
+    Int i = RadiationHotspotPerks.Length - 1
+    While i >= 0
+        If Player.HasPerk(RadiationHotspotPerks[i])
+            return i
         EndIf
+        i -= 1
     EndWhile
-        
+    return -1
+EndFunction
+
+
+Function ApplyMisfortune()
+    Int index = HighestRankPerkIndex()
     Perk thePerk = RadiationHotspotPerks[index]
     Hazard hotspot = RadiationHotspots[index]
     Float spacing = RadiationHotspotSpacing[index]
@@ -93,4 +115,3 @@ Event OnTimer(Int timerId)
         StartTimer(PumpTimerInterval, PumpTimerId)
     EndIf
 EndEvent
-    

@@ -7,49 +7,96 @@ Float Property PumpTimerInterval = 1 AutoReadOnly
 
 Float Property MisfortuneChance Auto Mandatory
 Float Property MisfortuneDuration Auto Mandatory
+
+Perk[] Property ContaminationPerks Auto Const Mandatory
 FormList Property Pristine Auto Mandatory
 FormList Property Contaminated Auto Mandatory
 
+Message Property ContaminationMessage Auto Const Mandatory
+Message Property ContaminationPerkMessage Auto Const Mandatory
+
 
 Actor Player = None
-Int QueueSize = 0
 Bool InRadiation = False
 Float ScaledMisfortuneChance = 0.0
 
 
-Function Queue()
-    QueueSize += 1
+Bool Function Add()
+    Int i = 0
+    While i < ContaminationPerks.Length
+        If !Player.HasPerk(ContaminationPerks[i])
+            Player.AddPerk(ContaminationPerks[i])
+            ContaminationPerkMessage.Show(i + 1)
+            return True
+        EndIf
+        i += 1
+    EndWhile
+    return False
+EndFunction
+
+
+Function ParseSettings()
+    Float chanceSetting = CrowdControlApi.GetFloatSetting("Misfortunes", "ContaminationChance", -1.0)
+    If chanceSetting < 0.0
+        chanceSetting = MisfortuneChance
+    EndIf
+
+    Float durationSetting = CrowdControlApi.GetFloatSetting("Misfortunes", "ContaminationDuration", -1.0)
+    If durationSetting < 0.0
+        durationSetting = MisfortuneDuration
+    EndIf
+
+    ScaledMisfortuneChance = Chance.CalculateTimescaledChance(chanceSetting, durationSetting, PumpTimerInterval)
 EndFunction
 
 
 Event OnInit()
-    If Pristine.GetSize() != Contaminated.GetSize()
-        Debug.Trace("ContaminationMisfortuneScript: Pristine.Length != Contaminated.Length")
+    Debug.Trace("ContaminationMisfortuneScript: OnInit")
+
+    If ContaminationPerks.Length == 0 || Pristine.GetSize() != Contaminated.GetSize()
+        Debug.Trace("ContaminationMisfortuneScript: ContaminationPerks empty or Pristine/Contaminated size mismatch")
     EndIf
 
     If Player == None
         Player = Game.GetPlayer()
     EndIf
 
-    If ScaledMisfortuneChance == 0.0
-        ScaledMisfortuneChance = Chance.CalculateTimescaledChance(MisfortuneChance, MisfortuneDuration, PumpTimerInterval)
-    EndIf
+    ParseSettings()
 
     RegisterForRadiationDamageEvent(Player)
-    Utility.Wait(Utility.RandomFloat(0.0, PumpTimerInterval))
-    StartTimer(PumpTimerInterval, PumpTimerId)
+    StartTimer(Utility.RandomFloat(0.0, PumpTimerInterval), PumpTimerId)
+EndEvent
+
+
+Event OnPlayerLoadGame()
+    ParseSettings()
 EndEvent
 
 
 Bool Function RollMisfortune()
+    If !Player.HasPerk(ContaminationPerks[0])
+        return False
+    EndIf
     return Utility.RandomFloat() <= ScaledMisfortuneChance
+EndFunction
+
+
+Perk Function HighestRankPerk()
+    Int i = ContaminationPerks.Length - 1
+    While i >= 0
+        If Player.HasPerk(ContaminationPerks[i])
+            return ContaminationPerks[i]
+        EndIf
+        i -= 1
+    EndWhile
+    return None
 EndFunction
 
 
 Bool Function ApplyMisfortune()
     Form[] allItems = Player.GetInventoryItems()
     Int[] indices = ChanceApi.ShuffledIndices(allItems.Length)
-    
+
     Form item = None
     Form replaceItem = None
     Int i = 0
@@ -68,8 +115,10 @@ Bool Function ApplyMisfortune()
         return False
     EndIf
 
+    Player.RemovePerk(HighestRankPerk())
     Player.RemoveItem(item)
     Player.AddItem(replaceItem)
+    ContaminationMessage.Show()
 
     return True
 EndFunction
@@ -85,12 +134,8 @@ EndEvent
 Event OnTimer(Int timerId)
     If timerId == PumpTimerId
         If InRadiation
-            If QueueSize
-                If RollMisfortune()
-                    If ApplyMisfortune()
-                        QueueSize -= 1
-                    EndIf
-                EndIf
+            If RollMisfortune()
+                ApplyMisfortune()
             EndIf
             InRadiation = False
         EndIf

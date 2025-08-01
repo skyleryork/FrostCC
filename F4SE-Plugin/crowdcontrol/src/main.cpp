@@ -688,16 +688,16 @@ bool LoadIni()
 	return iniLoaded;
 }
 
-SInt32 GetIntSetting(StaticFunctionTag*, BSFixedString section, BSFixedString key)
+SInt32 GetIntSetting(StaticFunctionTag*, BSFixedString section, BSFixedString key, SInt32 defaultValue)
 {
 	if (!LoadIni()) return -1;
-	return ini.GetLongValue(section, key, 0);
+	return ini.GetLongValue(section, key, defaultValue);
 }
 
-float GetFloatSetting(StaticFunctionTag*, BSFixedString section, BSFixedString key)
+float GetFloatSetting(StaticFunctionTag*, BSFixedString section, BSFixedString key, float defaultValue)
 {
 	if (!LoadIni()) return -1;
-	return ini.GetDoubleValue(section, key, 0);
+	return ini.GetDoubleValue(section, key, defaultValue);
 }
 
 
@@ -879,8 +879,8 @@ bool RegisterFuncs(VirtualMachine * a_registry)
 	a_registry->RegisterFunction(new NativeFunction4<StaticFunctionTag, void, SInt32, SInt32, BSFixedString, SInt32>("Respond", "CrowdControlApi", CrowdControlRespond, a_registry));
 	a_registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, SInt32, BSFixedString>("HasTimer", "CrowdControlApi", CrowdControlHasTimer, a_registry));
 	a_registry->RegisterFunction(new NativeFunction0<StaticFunctionTag, void>("ClearTimers", "CrowdControlApi", CrowdControlClearTimers, a_registry));
-	a_registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, SInt32, BSFixedString, BSFixedString>("GetIntSetting", "CrowdControlApi", GetIntSetting, a_registry));
-	a_registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, float, BSFixedString, BSFixedString>("GetFloatSetting", "CrowdControlApi", GetFloatSetting, a_registry));
+	a_registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, SInt32, BSFixedString, BSFixedString, SInt32>("GetIntSetting", "CrowdControlApi", GetIntSetting, a_registry));
+	a_registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, float, BSFixedString, BSFixedString, float>("GetFloatSetting", "CrowdControlApi", GetFloatSetting, a_registry));
 
 	a_registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, VMArray<BSFixedString>, BSFixedString, BSFixedString>("StringSplit", "CrowdControlApi", CrowdControlStringSplit, a_registry));
 	a_registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, bool, BSFixedString, BSFixedString>("StringContains", "CrowdControlApi", CrowdControlStringContains, a_registry));

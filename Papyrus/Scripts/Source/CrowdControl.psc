@@ -37,12 +37,12 @@ Event OnInit()
 	lastCommandType = -1
     lastState = ""
     isPlayerInWorkshop = false
-   
+
     player = Game.GetPlayer()
     InitVars()
-   
+
     string[] ccTest = CrowdControlApi.StringSplit("1~2", "~")
-   
+
     if ccTest.length == 2
         F4SEFound = true
         StartTimer(2.0, updateTimerId)
@@ -57,19 +57,19 @@ Function InitVars()
     if playerFaction == None
         playerFaction = Game.GetFormFromFile(0x1C21C, "Fallout4.esm") as Faction
     endif
-   
-    if playerEnemyFaction == None 
+
+    if playerEnemyFaction == None
         playerEnemyFaction = Game.GetFormFromFile(0x106c2f, "Fallout4.esm") as Faction
     endif
-    
-    if playerAllyFaction == None 
+
+    if playerAllyFaction == None
         playerAllyFaction = Game.GetFormFromFile(0x106c30, "Fallout4.esm") as Faction
     endif
-    
+
     if keywordActorFriendlyNpc == None
         keywordActorFriendlyNpc = Game.GetFormFromFile(0x10053FF, "CrowdControl.esp") as Keyword
     endif
-    
+
     ; Get rid of Billy
     ReferenceAlias ra = GetAlias(7)
     Actor a = ra.GetActorReference()
@@ -78,7 +78,7 @@ Function InitVars()
         a.Disable()
         a.Delete()
     endif
-    
+
     LastCellLoadAt = 0.0
 
     If CH == None
@@ -112,17 +112,17 @@ endEvent
 
 ; This event is called when the player loads a game
 Event OnPlayerLoadGame()
-    InitVars()   
-    
+    InitVars()
+
     ; Reset all state
     lastCommandId = -1
 	lastCommandType = -1
     lastState = ""
     isPlayerInWorkshop = false
-   
+
     ; Clear all effect timers, in case player died or reloaded.
 	CrowdControlApi.ClearTimers()
-   
+
     ; Start new timers
     CancelTimer(updateTimerId)
     CancelTimer(updateTimerKeepAliveId)
@@ -144,28 +144,28 @@ Event OnTimer(Int aiTimerID)
         ; This timer ensures that the main timer is restarted if it stops running for any reason
         if Utility.GetCurrentRealTime() - LastUpdateTimerPing >= 30
             Debug.Trace("Halt detected. Restarting update timer.")
-            
+
             CancelTimer(updateTimerId)
             StartTimer(1.0, updateTimerId)
             PingUpdateTimer()
         endif
-        
+
         StartTimer(15.0, updateTimerKeepAliveId)
-        
+
     elseif aiTimerID == updateTimerId
         PingUpdateTimer()
-        
+
         if !F4SEFound
             Debug.Notification("CrowdControl disabled: F4SE not found.")
-            
+
             return
         endif
-    
+
         string newState = CrowdControlApi.GetCrowdControlState()
 
         if lastState == ""
             Debug.Notification("CrowdControl v" + CrowdControlApi.Version())
-            
+
             if newState != lastState
                 if newState == "disconnected"
                     Debug.Notification("CrowdControl is connecting...")
@@ -178,7 +178,7 @@ Event OnTimer(Int aiTimerID)
                 Debug.Notification("CrowdControl is " + newState)
             endif
         endif
-        
+
         lastState = newState
 
         if newState == "running"
@@ -188,14 +188,14 @@ Event OnTimer(Int aiTimerID)
             else
                 StartTimer(1, updateTimerId)
             endif
-            
+
         elseif newState == "stopped"
             CrowdControlApi.Run()
-            
+
             StartTimer(1, updateTimerId)
         else
             CrowdControlApi.Reconnect()
-            
+
             StartTimer(1, updateTimerId)
         endif
    EndIf
@@ -206,7 +206,7 @@ int ShouldShowNotifications = -1
 Function PrintMessage(string _message)
 	if ShouldShowNotifications < 0
         int iniSetting = CrowdControlApi.GetIntSetting("General", "bEnableCommandNotify")
-        
+
         if iniSetting == 1 || iniSetting < 0
             Debug.Notification(_message)
         endif
@@ -226,20 +226,20 @@ EndFunction
 
 bool Function CanRunCommands()
     Actor playerDialogTarget = player.GetDialogueTarget()
-    
+
     if playerDialogTarget != None
         if playerDialogTarget.IsInDialogueWithPlayer()
             Debug.Trace("    is in dialog with player")
-            
+
             return false
         endif
     endif
-   
+
     if !Game.IsLookingControlsEnabled() || !Game.IsMovementControlsEnabled()
         Debug.Trace("    looking or moving is disabled")
         return false
     endif
-    
+
     if Utility.IsInMenuMode()
         Debug.Trace("    menu mode enabled")
         return false
@@ -249,21 +249,21 @@ bool Function CanRunCommands()
         Debug.Trace("    just loaded recently")
         return false
     endif
-    
+
     return true
 endFunction
 
 bool Function RunCommands()
 	if player.IsDead() || !CanRunCommands()
         Debug.Trace("  can't run commands!")
-        
+
 		return false
 	endif
-    
+
     int commandCount = CrowdControlApi.GetCommandCount()
-    
+
 	CrowdControlApi:CrowdControlCommand command = CrowdControlApi.GetCommand()
-    
+
 	if command != None
         if lastCommandId == command.id && lastCommandType == command.type
 			if command.type == 1
@@ -275,11 +275,11 @@ bool Function RunCommands()
 		else
 			lastCommandId = command.id
 			lastCommandType = command.type
-			
+
             ProcessCommand(command)
 		endif
 	endif
-    
+
     return commandCount > 1
 EndFunction
 
@@ -306,7 +306,7 @@ EndStruct
 ; Define a custom function to parse the command string and return a ParsedCommand struct
 ParsedCommand Function ParseCrowdControlCommand(CrowdControlApi:CrowdControlCommand ccCommand)
     ParsedCommand r = new ParsedCommand
-   
+
     r.command = ccCommand.command
     r.id = ccCommand.param0
     r.quantity = ccCommand.param1
@@ -325,7 +325,7 @@ ParsedCommand Function ParseCrowdControlCommand(CrowdControlApi:CrowdControlComm
     else
         r.duration = 0
     endif
-    
+
     r.param0 = ccCommand.param2
     r.param1 = ccCommand.param3
     r.param2 = ccCommand.param4
@@ -350,13 +350,13 @@ ReferenceAlias Function GetAlias(int index)
         a = None
       endif
     endif
-    
+
     return ra
 endFunction
 
 Form Function FindFormId(int id)
     Form foundForm = Game.GetFormFromFile(id, "Fallout4.esm") as Form
-            
+
     if foundForm != None
         return foundForm
     endif
@@ -384,7 +384,7 @@ string Function NormalizeDataFileName(string fileName)
 	elseif fileName == "crowdcontrol"
 		return "CrowdControl.esp"
 	endif
-    
+
     return fileName
 endfunction
 
@@ -395,12 +395,12 @@ Form Function FindForm(String id)
 
     if CrowdControlApi.StringContains(id, "-")
         string[] parts = CrowdControlApi.StringSplit(id, "-")
-       
+
         string fileName = NormalizeDataFileName(parts[0])
         int formId = parts[1] as int
-        
-        Form r = Game.GetFormFromFile(formId, fileName) as Form    
-       
+
+        Form r = Game.GetFormFromFile(formId, fileName) as Form
+
         return r
     else
         return FindFormId(id as int)
@@ -409,23 +409,23 @@ endFunction
 
 Function StopFriendlyCombatWith(Actor theActor)
     ObjectReference[] kActors = player.FindAllReferencesWithKeyword(keywordActorFriendlyNpc, 2048.0)
-    
+
     int i = 0
     while (i < kActors.Length)
         Actor kActor = kActors[i] as Actor
-        
+
         int combatState = kActor.GetCombatState()
-        
+
         if combatState == 1
             Actor aTarget = kActor.GetCombatTarget()
             if aTarget == theActor || aTarget.HasKeyword(keywordActorFriendlyNpc) || aTarget.IsInFaction(playerFaction) || aTarget.IsInFaction(playerAllyFaction)
                 kActor.StopCombat()
             endif
-            
+
         elseif combatState == 2
             kActor.StopCombat()
         endif
-        
+
         i += 1
     endWhile
 endFunction
@@ -441,12 +441,12 @@ endFunction
 
 Function AttachMod(ObjectReference spawnedItem, string modFormId)
     ObjectMod theMod = FindForm(modFormId) as ObjectMod
-    
+
     if theMod
         spawnedItem.AttachMod(theMod)
     else
         Debug.Trace("Cannot find MOD with id '" + modFormId + "'")
-    
+
         Debug.Notification("Cannot find MOD with id '" + modFormId + "'")
     endif
 endfunction
@@ -483,12 +483,12 @@ EndFunction
 
 Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
     ParsedCommand command = ParseCrowdControlCommand(ccCommand)
-   
+
     if command == None
         Debug.Notification("Invalid command format received.")
         return
     endif
-   
+
     int id = ccCommand.id
     string viewer = ccCommand.viewer
     string status
@@ -526,7 +526,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         Respond(id, 0, status)
         PrintMessage(status)
 
-    elseif command.command == "addradiation"
+    elseif command.command == "hazard-radiation"
         If RadiationHotspotMisfortune.Add()
             Respond(id, 0, status)
             PrintMessage(status)
@@ -541,17 +541,22 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
 
         Respond(id, 0, status)
         PrintMessage(status)
-    
+
     elseif command.command == "loseitemmisfortune"
         LoseItemMisfortune.Queue()
         Respond(id, 0, status)
         PrintMessage(status)
 
-    elseif command.command == "contaminationmisfortune"
-        ContaminationMisfortune.Queue()
-        Respond(id, 0, status)
-        PrintMessage(status)
-    
+    elseif command.command == "misfortune-contamination"
+        If ContaminationMisfortune.Add()
+            Respond(id, 0, status)
+            PrintMessage(status)
+        Else
+            status = viewer + ", contaminations maxed"
+            Respond(id, 1, status)
+            PrintMessage(status)
+        EndIf
+
     elseif command.command == "spawnstalkers"
         SafeSpawnBaseScript:SpawnData data = MakeSpawnData(command)
 
@@ -607,18 +612,18 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
 
         Respond(id, 0, status)
         PrintMessage(status)
-        
+
     elseif command.command == "fasttravel"
         if Game.IsFastTravelEnabled()
             status = viewer + " requested fast travel to: " + CrowdControlApi.GetName(command.id)
 
             PrintMessage(status)
             Respond(id, 0, status)
-            
+
             Utility.Wait(1)
-            
+
             ObjectReference theMarker = FindForm(command.id) as ObjectReference
-            
+
             Game.FastTravel(theMarker)
         else
             status = viewer + ", cannot fast travel at this time"
@@ -626,25 +631,25 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
             PrintMessage(status)
             Respond(id, 1, status)
         endif
-    
+
     elseif command.command == "setweather"
         Weather theWeather = FindForm(command.id) as Weather
-    
+
         theWeather.SetActive(false, true)
-       
+
         status = viewer + " changed the weather to: " + CrowdControlApi.GetName(command.id)
 
         Respond(id, 0, status)
         PrintMessage(status)
 
     elseif command.command == "playsound"
-   
+
         if command.id > 0
             PlaySound(command.id)
         endif
-       
+
         int playerSex = player.GetActorBase().GetSex()
-        
+
         if playerSex == 0
             ; Male
             if command.param0 != "" && command.param0 as int > 0
@@ -656,12 +661,12 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
                 PlaySound(command.param1)
             endif
         endif
-    
+
         status = viewer + " played a sound"
-        
+
         PrintMessage(status)
         Respond(id, 0, status)
-    
+
     else
         Debug.Notification("Unknown command received: " + command.command)
 	endif
@@ -685,14 +690,14 @@ EndEvent
 float Function GetPlayerAngle()
     float gameAngleZ ; the game's version
     float trigAngleZ ; the rest of the world's interpretation of the same
-     
+
     gameAngleZ = player.GetAngleZ()
     if gameAngleZ < 90
       trigAngleZ = 90 - gameAngleZ
     else
       trigAngleZ = 450 - gameAngleZ
     endif
-    
+
     return trigAngleZ
 endfunction
 
@@ -719,17 +724,17 @@ EndFunction
 
 Function TraceInventory()
     Form[] items = player.GetInventoryItems()
-   
+
     Debug.Trace("TraceInventory() length=" + items.Length)
-    
+
     int i = 0
     while i < items.Length
         Form item = items[i]
-        
+
         Debug.Trace("  i: " + i)
         Debug.Trace("    Type: " + item)
         Debug.Trace("    Name: " + item.GetName())
-        
+
         i += 1
     endWhile
 endfunction
