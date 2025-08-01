@@ -36,7 +36,9 @@ EndEvent
 
 
 Bool Function RollMisfortune()
-    return Utility.RandomFloat() < Chance.CalcuateTimedChance(Chance.CalculateChance(MisfortuneChance, QueueSize), IrradiatedTime)
+    Float calculated = Chance.CalcuateTimedChance(Chance.CalculateChance(MisfortuneChance, QueueSize), IrradiatedTime)
+    Debug.Trace("ContaminationMisfortuneScript: RollMisfortune = " + calculated + " (QueueSize = " + QueueSize + ", IrradiatedTime = " + IrradiatedTime + ")")
+    return Utility.RandomFloat() <= calculated
 EndFunction
 
 
@@ -70,22 +72,28 @@ EndFunction
 
 
 Event OnRadiationDamage(ObjectReference akTarget, bool abIngested)
-    InRadiation = True
-    RegisterForRadiationDamageEvent(Player)
+    If !abIngested
+        InRadiation = True
+    EndIf
 EndEvent
 
 
 Event OnTimer(Int timerId)
     If timerId == PumpTimerId
         If InRadiation
-            IrradiatedTime += PumpTimerInterval
-            If !abIngested && QueueSize && RollMisfortune() && ApplyMisfortune()
-                QueueSize -= 1
+            If QueueSize && IrradiatedTime > 0.0
+                If RollMisfortune()
+                    If ApplyMisfortune()
+                        QueueSize -= 1
+                    EndIf
+                EndIf
             EndIf
+            IrradiatedTime += PumpTimerInterval
             InRadiation = False
         Else
             IrradiatedTime = 0.0
         EndIf
+        RegisterForRadiationDamageEvent(Player)
         StartTimer(PumpTimerInterval, PumpTimerId)
     EndIf
 EndEvent

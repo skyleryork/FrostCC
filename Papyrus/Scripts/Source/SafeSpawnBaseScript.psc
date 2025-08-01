@@ -63,7 +63,7 @@ EndFunction
 Bool Function QueueSpawn(SpawnData data)
     Lock()
 
-    Debug.Trace("SafeSpawnBaseScript::QueueSpawn: " + (QueueSize + 1) + " of " + Queue.Length)
+    ;Debug.Trace("SafeSpawnBaseScript::QueueSpawn: " + (QueueSize + 1) + " of " + Queue.Length)
     If QueueSize == Queue.Length
         Unlock()
         return False
@@ -79,13 +79,13 @@ EndFunction
 
 ObjectReference[] Function PumpQueue(Bool enableSpawns = True)
     If QueueSize == 0
-        Debug.Trace("SafeSpawnBaseScript::PumpQueue -- empty")
+        ;Debug.Trace("SafeSpawnBaseScript::PumpQueue -- empty")
         StartTimer(PumpTimerInterval, PumpTimerId)
         return None
     EndIf
 
     If ( Utility.GetCurrentRealTime() - LastSpawn ) < SpawnDelay
-        Debug.Trace("SafeSpawnBaseScript::PumpQueue -- too soon")
+        ;Debug.Trace("SafeSpawnBaseScript::PumpQueue -- too soon")
         StartTimer(PumpTimerInterval, PumpTimerId)
         return None
     EndIf
@@ -112,7 +112,7 @@ ObjectReference[] Function PumpQueue(Bool enableSpawns = True)
     EndWhile
 
     If numFoundMarkers == 0
-        Debug.Trace("SafeSpawnBaseScript::PumpQueue -- no markers of " + markers.Length + " between " + data.minDistance + " and " + data.maxDistance)
+        ;Debug.Trace("SafeSpawnBaseScript::PumpQueue -- no markers of " + markers.Length + " between " + data.minDistance + " and " + data.maxDistance)
         StartTimer(PumpTimerInterval, PumpTimerId)
         return None
     EndIf
@@ -134,7 +134,7 @@ ObjectReference[] Function PumpQueue(Bool enableSpawns = True)
     ObjectReference[] spawned = new ObjectReference[quantity]
     while i < quantity
         CC.PingUpdateTimer()
-        Debug.Trace("SafeSpawnBaseScript::PumpQueue -- spawning " + (i + 1) + " of " + quantity)
+        ;Debug.Trace("SafeSpawnBaseScript::PumpQueue -- spawning " + (i + 1) + " of " + quantity)
         ObjectReference thisSpawn = foundMarker.PlaceAtMe(data.theForm, abInitiallyDisabled = True)
         Float offsetX = 0
         Float offsetY = 0
@@ -156,6 +156,6 @@ ObjectReference[] Function PumpQueue(Bool enableSpawns = True)
     LastSpawn = Utility.GetCurrentRealTime()
     StartTimer(PumpTimerInterval, PumpTimerId)
 
-    Debug.Trace("SafeSpawnBaseScript::PumpQueue -- done spawning")
+    ;Debug.Trace("SafeSpawnBaseScript::PumpQueue -- done spawning")
     return spawned
 EndFunction

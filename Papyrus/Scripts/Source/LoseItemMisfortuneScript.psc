@@ -38,7 +38,9 @@ EndEvent
 
 
 Bool Function RollMisfortune()
-    return Utility.RandomFloat() < Chance.CalcuateTimedChance(Chance.CalculateChance(MisfortuneChance, QueueSize), SprintTime)
+    Float calculated = Chance.CalcuateTimedChance(Chance.CalculateChance(MisfortuneChance, QueueSize), SprintTime)
+    Debug.Trace("LoseItemMisfortuneScript: RollMisfortune = " + calculated + " (QueueSize = " + QueueSize + ", SprintTime = " + SprintTime + ")")
+    return Utility.RandomFloat() <= calculated
 EndFunction
 
 
@@ -63,7 +65,7 @@ Bool Function ApplyMisfortune()
     EndWhile
 
     If !item || index < 0
-        Debug.Trace("LoseItemMisfortuneScript: no item found of " + allItems.Length)
+        ;Debug.Trace("LoseItemMisfortuneScript: no item found of " + allItems.Length)
         return False
     EndIf
 
@@ -87,18 +89,22 @@ Event OnTimer(Int timerId)
         If Player.IsSprinting() || (Player.IsInPowerArmor() && Player.IsRunning())
             If Sprinting
                 SprintTime += PumpTimerInterval
-                Debug.Trace("LoseItemMisfortuneScript: Still sprinting for " + SprintTime)
-                If QueueSize && RollMisfortune() && ApplyMisfortune()
-                    QueueSize -= 1
-                    SprintTime = 0.0
+                ;Debug.Trace("LoseItemMisfortuneScript: Still sprinting for " + SprintTime)
+                If QueueSize
+                    If RollMisfortune()
+                        If ApplyMisfortune()
+                            QueueSize -= 1
+                            SprintTime = 0.0
+                        EndIf
+                    EndIf
                 EndIf
             Else
-                Debug.Trace("LoseItemMisfortuneScript: Started sprinting")
+                ;Debug.Trace("LoseItemMisfortuneScript: Started sprinting")
                 Sprinting = True
                 SprintTime = 0.0
             EndIf
         ElseIf Sprinting
-            Debug.Trace("LoseItemMisfortuneScript: Ended sprinting")
+            ;Debug.Trace("LoseItemMisfortuneScript: Ended sprinting")
             Sprinting = False
         EndIf
         StartTimer(PumpTimerInterval, PumpTimerId)
