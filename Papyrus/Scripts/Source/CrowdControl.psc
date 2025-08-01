@@ -542,10 +542,15 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         Respond(id, 0, status)
         PrintMessage(status)
 
-    elseif command.command == "loseitemmisfortune"
-        LoseItemMisfortune.Queue()
-        Respond(id, 0, status)
-        PrintMessage(status)
+    elseif command.command == "misfortune-loseitem"
+        If LoseItemMisfortune.Add()
+            Respond(id, 0, status)
+            PrintMessage(status)
+        Else
+            status = viewer + ", lose items maxed"
+            Respond(id, 1, status)
+            PrintMessage(status)
+        EndIf
 
     elseif command.command == "misfortune-contamination"
         If ContaminationMisfortune.Add()

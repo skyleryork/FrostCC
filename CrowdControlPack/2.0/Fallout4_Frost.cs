@@ -127,7 +127,7 @@ namespace CrowdControl.Games.Packs.Fallout4_Frost
 
 			#region Misfortunes
 
-			//new Effect("Lose Item", $"loseitemmisfortune") { Price = GetPrice(25), Category = "Misfortunes" },
+			new Effect("Lose Item", $"misfortune-loseitem") { Description = "Player's loses a random fragile item.", Price = GetPrice(25), Category = "Misfortunes" },
 			new Effect("Contamination", $"misfortune__contamination") { Description = "Contaminate a random food item.", Price = GetPrice(25), Category = "Misfortunes" },
 
 			#endregion

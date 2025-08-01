@@ -2,24 +2,68 @@ Scriptname LoseItemMisfortuneScript extends ReferenceAlias
 
 
 Int Property PumpTimerId = 1 AutoReadOnly
-Float Property PumpTimerInterval = 1 AutoReadOnly
+Float Property PumpTimerInterval = 0.5 AutoReadOnly
 
 
 Float Property MisfortuneChance Auto Mandatory
 Float Property MisfortuneDuration Auto Mandatory
+Perk[] Property LoseItemPerks Auto Const Mandatory
+
 FormList Property ItemKeywords Auto Mandatory
 FormList Property ItemSounds Auto Mandatory
 Int[] Property ItemDetection Auto Mandatory
 
+Message Property LoseItemMessage Auto Const Mandatory
+Message Property LoseItemPerkMessage Auto Const Mandatory
+
 
 Actor Player = None
-Int QueueSize = 0
-Bool Sprinting = False
 Float ScaledMisfortuneChance = 0.0
+Bool Locked = False
 
 
-Function Queue()
-    QueueSize += 1
+Function Lock()
+    While Locked
+        Utility.Wait(0.2)
+    EndWhile
+    Locked = True
+EndFunction
+
+
+Function Unlock()
+    Locked = False
+EndFunction
+
+
+Bool Function Add()
+    Lock()
+    Int i = 0
+    While i < LoseItemPerks.Length
+        If !Player.HasPerk(LoseItemPerks[i])
+            Player.AddPerk(LoseItemPerks[i])
+            Unlock()
+            LoseItemPerkMessage.Show(i + 1)
+            return True
+        EndIf
+        i += 1
+    EndWhile
+    Unlock()
+    return False
+EndFunction
+
+
+Function ParseSettings()
+    Float chanceSetting = CrowdControlApi.GetFloatSetting("Misfortunes", "LoseItemChance", -1.0)
+    If chanceSetting < 0.0
+        chanceSetting = MisfortuneChance
+    EndIf
+
+    Float durationSetting = CrowdControlApi.GetFloatSetting("Misfortunes", "LoseItemDuration", -1.0)
+    If durationSetting < 0.0
+        durationSetting = MisfortuneDuration
+    EndIf
+
+    ScaledMisfortuneChance = Chance.CalculateTimescaledChance(chanceSetting, durationSetting, PumpTimerInterval)
 EndFunction
 
 
@@ -27,28 +71,45 @@ Event OnInit()
     Debug.Trace("LoseItemMisfortuneScript: OnInit")
 
     If ( ItemKeywords.GetSize() != ItemSounds.GetSize() ) || ( ItemKeywords.GetSize() != ItemDetection.Length )
-        Debug.Trace("LoseItemMisfortuneScript: mismatched property array lengths")
+        Debug.Trace("LoseItemMisfortuneScript: ItemKeywords/ItemSounds/ItemDetection mismatched lengths")
     EndIf
 
     If Player == None
         Player = Game.GetPlayer()
     EndIf
 
-    If ScaledMisfortuneChance == 0.0
-        ScaledMisfortuneChance = Chance.CalculateTimescaledChance(MisfortuneChance, MisfortuneDuration, PumpTimerInterval)
-    EndIf
+    ParseSettings()
 
-    Utility.Wait(Utility.RandomFloat(0.0, PumpTimerInterval))
-    StartTimer(PumpTimerInterval, PumpTimerId)
+    StartTimer(Utility.RandomFloat(0.0, PumpTimerInterval), PumpTimerId)
+EndEvent
+
+
+Event OnPlayerLoadGame()
+    ParseSettings()
 EndEvent
 
 
 Bool Function RollMisfortune()
+    If !Player.HasPerk(LoseItemPerks[0])
+        return False
+    EndIf
     return Utility.RandomFloat() <= ScaledMisfortuneChance
 EndFunction
 
 
-Bool Function ApplyMisfortune()
+Perk Function HighestRankPerk()
+    Int i = LoseItemPerks.Length - 1
+    While i >= 0
+        If Player.HasPerk(LoseItemPerks[i])
+            return LoseItemPerks[i]
+        EndIf
+        i -= 1
+    EndWhile
+    return None
+EndFunction
+
+
+Function ApplyMisfortune()
     FormList keywords = ItemKeywords
     Form[] allItems = Player.GetInventoryItems()
     Int[] filtered = keywords.FindFormsByKeywords(allItems)
@@ -69,41 +130,33 @@ Bool Function ApplyMisfortune()
     EndWhile
 
     If !item || index < 0
-        ;Debug.Trace("LoseItemMisfortuneScript: no item found of " + allItems.Length)
-        return False
+        return
     EndIf
 
     Sound loseSound = ItemSounds.GetAt(index) as Sound
     Int detection = ItemDetection[index]
 
+    Player.RemovePerk(HighestRankPerk())
     Player.RemoveItem(item)
+
     If loseSound
         loseSound.Play(Player)
     EndIf
+
     If detection
         Player.CreateDetectionEvent(Player, detection)
     EndIf
-
-    return True
 EndFunction
 
 
 Event OnTimer(Int timerId)
     If timerId == PumpTimerId
         If Player.IsSprinting() || (Player.IsInPowerArmor() && Player.IsRunning())
-            If Sprinting
-                If QueueSize
-                    If RollMisfortune()
-                        If ApplyMisfortune()
-                            QueueSize -= 1
-                        EndIf
-                    EndIf
-                EndIf
-            Else
-                Sprinting = True
+            Lock()
+            If RollMisfortune()
+                ApplyMisfortune()
             EndIf
-        ElseIf Sprinting
-            Sprinting = False
+            Unlock()
         EndIf
         StartTimer(PumpTimerInterval, PumpTimerId)
     EndIf

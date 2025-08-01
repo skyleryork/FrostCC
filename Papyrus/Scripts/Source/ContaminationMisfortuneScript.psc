@@ -19,18 +19,35 @@ Message Property ContaminationPerkMessage Auto Const Mandatory
 Actor Player = None
 Bool InRadiation = False
 Float ScaledMisfortuneChance = 0.0
+Bool Locked = False
+
+
+Function Lock()
+    While Locked
+        Utility.Wait(0.2)
+    EndWhile
+    Locked = True
+EndFunction
+
+
+Function Unlock()
+    Locked = False
+EndFunction
 
 
 Bool Function Add()
+    Lock()
     Int i = 0
     While i < ContaminationPerks.Length
         If !Player.HasPerk(ContaminationPerks[i])
             Player.AddPerk(ContaminationPerks[i])
+            Unlock()
             ContaminationPerkMessage.Show(i + 1)
             return True
         EndIf
         i += 1
     EndWhile
+    Unlock()
     return False
 EndFunction
 
@@ -134,9 +151,11 @@ EndEvent
 Event OnTimer(Int timerId)
     If timerId == PumpTimerId
         If InRadiation
+            Lock()
             If RollMisfortune()
                 ApplyMisfortune()
             EndIf
+            Unlock()
             InRadiation = False
         EndIf
         RegisterForRadiationDamageEvent(Player)

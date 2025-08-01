@@ -18,18 +18,35 @@ Message Property RadiationPerkMessage Auto Const Mandatory
 
 Actor Player = None
 Float ScaledMisfortuneChance = 0.0
+Bool Locked = False
+
+
+Function Lock()
+    While Locked
+        Utility.Wait(0.2)
+    EndWhile
+    Locked = True
+EndFunction
+
+
+Function Unlock()
+    Locked = False
+EndFunction
 
 
 Bool Function Add()
+    Lock()
     Int i = 0
     While i < RadiationHotspotPerks.Length
         If !Player.HasPerk(RadiationHotspotPerks[i])
             Player.AddPerk(RadiationHotspotPerks[i])
+            Unlock()
             RadiationPerkMessage.Show(i + 1)
             return True
         EndIf
         i += 1
     EndWhile
+    Unlock()
     return False
 EndFunction
 
@@ -109,9 +126,11 @@ EndFunction
 
 Event OnTimer(Int timerId)
     If timerId == PumpTimerId
+        Lock()
         If RollMisfortune()
             ApplyMisfortune()
         EndIf
+        Unlock()
         StartTimer(PumpTimerInterval, PumpTimerId)
     EndIf
 EndEvent
