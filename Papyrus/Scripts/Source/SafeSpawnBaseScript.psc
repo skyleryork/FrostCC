@@ -43,6 +43,7 @@ Function Init()
         Queue = new SpawnData[MaxQueue]
     EndIf
 
+    Utility.Wait(Utility.RandomFloat(0.0, PumpTimerInterval))
     StartTimer(PumpTimerInterval, PumpTimerId)
 EndFunction
 

@@ -36,6 +36,7 @@ Event OnInit()
     EndIf
 
     RegisterForRadiationDamageEvent(Player)
+    Utility.Wait(Utility.RandomFloat(0.0, PumpTimerInterval))
     StartTimer(PumpTimerInterval, PumpTimerId)
 EndEvent
 

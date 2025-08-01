@@ -3,11 +3,11 @@
 Scriptname CrowdControl extends ReferenceAlias
 
 Chance CH = None
-RadiationHotspotScript RadiationHotspot = None
 HostileSpawnScript HostileSpawn = None
 HazardSpawnScript HazardSpawn = None
 LoseItemMisfortuneScript LoseItemMisfortune = None
 ContaminationMisfortuneScript ContaminationMisfortune = None
+RadiationHotspotMisfortuneScript RadiationHotspotMisfortune = None
 
 Int[] ItemDie = None
 Int[] ItemResults = None
@@ -85,10 +85,6 @@ Function InitVars()
         CH = GetOwningQuest().GetAlias(0) as Chance
 	Endif
 
-    If RadiationHotspot == None
-        RadiationHotspot = GetOwningQuest().GetAlias(0) as RadiationHotspotScript
-	Endif
-
     If HostileSpawn == None
         HostileSpawn = GetOwningQuest().GetAlias(0) as HostileSpawnScript
 	Endif
@@ -103,6 +99,10 @@ Function InitVars()
 
     If ContaminationMisfortune == None
         ContaminationMisfortune = GetOwningQuest().GetAlias(0) as ContaminationMisfortuneScript
+    EndIf
+
+    If RadiationHotspotMisfortune == None
+        RadiationHotspotMisfortune = GetOwningQuest().GetAlias(0) as RadiationHotspotMisfortuneScript
     EndIf
 EndFunction
 
@@ -527,12 +527,11 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         PrintMessage(status)
 
     elseif command.command == "addradiation"
-        If RadiationHotspot.SpawnHotspot(command.id as Int, player)
+        If RadiationHotspotMisfortune.Add()
             Respond(id, 0, status)
             PrintMessage(status)
         Else
-            status = viewer + ", too close to other radiation hotspots"
-
+            status = viewer + ", radiation hotspots maxed"
             Respond(id, 1, status)
             PrintMessage(status)
         EndIf

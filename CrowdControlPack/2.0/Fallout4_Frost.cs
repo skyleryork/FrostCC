@@ -106,9 +106,7 @@ namespace CrowdControl.Games.Packs.Fallout4_Frost
 
 			#region Radiation
 
-			new Effect("Small Hotspot", $"addradiation_0") { Description = "3 rad/s", Price = GetPrice(5), Category = "Radiation" },
-			new Effect("Medium Hotspot", $"addradiation_1") { Description = "6 rad/s", Price = GetPrice(5), Category = "Radiation" },
-			new Effect("Large Hotspot", $"addradiation_2") { Description = "9 rad/s", Price = GetPrice(5), Category = "Radiation" },
+			new Effect("Add Radiation Hotspot Rank", $"addradiation") { Description = "3\\6\\9 rad/s", Price = GetPrice(5), Category = "Radiation" },
 
 			#endregion
 

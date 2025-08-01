@@ -38,6 +38,7 @@ Event OnInit()
         ScaledMisfortuneChance = Chance.CalculateTimescaledChance(MisfortuneChance, MisfortuneDuration, PumpTimerInterval)
     EndIf
 
+    Utility.Wait(Utility.RandomFloat(0.0, PumpTimerInterval))
     StartTimer(PumpTimerInterval, PumpTimerId)
 EndEvent
 
