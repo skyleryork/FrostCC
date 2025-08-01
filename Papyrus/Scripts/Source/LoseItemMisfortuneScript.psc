@@ -6,6 +6,7 @@ Float Property PumpTimerInterval = 1 AutoReadOnly
 
 
 Float Property MisfortuneChance Auto Mandatory
+Float Property MisfortuneDuration Auto Mandatory
 FormList Property ItemKeywords Auto Mandatory
 FormList Property ItemSounds Auto Mandatory
 Int[] Property ItemDetection Auto Mandatory
@@ -14,7 +15,7 @@ Int[] Property ItemDetection Auto Mandatory
 Actor Player = None
 Int QueueSize = 0
 Bool Sprinting = False
-Float SprintTime = 0.0
+Float ScaledMisfortuneChance = 0.0
 
 
 Function Queue()
@@ -33,14 +34,16 @@ Event OnInit()
         Player = Game.GetPlayer()
     EndIf
 
+    If ScaledMisfortuneChance == 0.0
+        ScaledMisfortuneChance = Chance.CalculateTimescaledChance(MisfortuneChance, MisfortuneDuration, PumpTimerInterval)
+    EndIf
+
     StartTimer(PumpTimerInterval, PumpTimerId)
 EndEvent
 
 
 Bool Function RollMisfortune()
-    Float calculated = Chance.CalcuateTimedChance(Chance.CalculateChance(MisfortuneChance, QueueSize), SprintTime)
-    Debug.Trace("LoseItemMisfortuneScript: RollMisfortune = " + calculated + " (QueueSize = " + QueueSize + ", SprintTime = " + SprintTime + ")")
-    return Utility.RandomFloat() <= calculated
+    return Utility.RandomFloat() <= ScaledMisfortuneChance
 EndFunction
 
 
@@ -88,23 +91,17 @@ Event OnTimer(Int timerId)
     If timerId == PumpTimerId
         If Player.IsSprinting() || (Player.IsInPowerArmor() && Player.IsRunning())
             If Sprinting
-                SprintTime += PumpTimerInterval
-                ;Debug.Trace("LoseItemMisfortuneScript: Still sprinting for " + SprintTime)
                 If QueueSize
                     If RollMisfortune()
                         If ApplyMisfortune()
                             QueueSize -= 1
-                            SprintTime = 0.0
                         EndIf
                     EndIf
                 EndIf
             Else
-                ;Debug.Trace("LoseItemMisfortuneScript: Started sprinting")
                 Sprinting = True
-                SprintTime = 0.0
             EndIf
         ElseIf Sprinting
-            ;Debug.Trace("LoseItemMisfortuneScript: Ended sprinting")
             Sprinting = False
         EndIf
         StartTimer(PumpTimerInterval, PumpTimerId)

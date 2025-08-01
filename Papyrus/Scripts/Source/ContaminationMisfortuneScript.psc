@@ -6,6 +6,7 @@ Float Property PumpTimerInterval = 1 AutoReadOnly
 
 
 Float Property MisfortuneChance Auto Mandatory
+Float Property MisfortuneDuration Auto Mandatory
 FormList Property Pristine Auto Mandatory
 FormList Property Contaminated Auto Mandatory
 
@@ -13,7 +14,7 @@ FormList Property Contaminated Auto Mandatory
 Actor Player = None
 Int QueueSize = 0
 Bool InRadiation = False
-Float IrradiatedTime = 0.0
+Float ScaledMisfortuneChance = 0.0
 
 
 Function Queue()
@@ -30,15 +31,17 @@ Event OnInit()
         Player = Game.GetPlayer()
     EndIf
 
+    If ScaledMisfortuneChance == 0.0
+        ScaledMisfortuneChance = Chance.CalculateTimescaledChance(MisfortuneChance, MisfortuneDuration, PumpTimerInterval)
+    EndIf
+
     RegisterForRadiationDamageEvent(Player)
     StartTimer(PumpTimerInterval, PumpTimerId)
 EndEvent
 
 
 Bool Function RollMisfortune()
-    Float calculated = Chance.CalcuateTimedChance(Chance.CalculateChance(MisfortuneChance, QueueSize), IrradiatedTime)
-    Debug.Trace("ContaminationMisfortuneScript: RollMisfortune = " + calculated + " (QueueSize = " + QueueSize + ", IrradiatedTime = " + IrradiatedTime + ")")
-    return Utility.RandomFloat() <= calculated
+    return Utility.RandomFloat() <= ScaledMisfortuneChance
 EndFunction
 
 
@@ -81,17 +84,14 @@ EndEvent
 Event OnTimer(Int timerId)
     If timerId == PumpTimerId
         If InRadiation
-            If QueueSize && IrradiatedTime > 0.0
+            If QueueSize
                 If RollMisfortune()
                     If ApplyMisfortune()
                         QueueSize -= 1
                     EndIf
                 EndIf
             EndIf
-            IrradiatedTime += PumpTimerInterval
             InRadiation = False
-        Else
-            IrradiatedTime = 0.0
         EndIf
         RegisterForRadiationDamageEvent(Player)
         StartTimer(PumpTimerInterval, PumpTimerId)

@@ -37,8 +37,8 @@ Float Function CalculateChance(Float chancePerEvent, Int events) Global
 EndFunction
 
 
-Float Function CalcuateTimedChance(Float chancePerSecond, Float seconds) Global
-    return 1.0 - Math.Exp(Math.Log(1.0 - chancePerSecond) * seconds)
+Float Function CalculateTimescaledChance(Float durationChance, Float duration, Float scaledDuration) Global
+    return 1.0 - Math.Exp(Math.Log(1.0 - durationChance) * scaledDuration / duration)
 EndFunction
 
 
