@@ -2,7 +2,7 @@ Scriptname Loot:LootOnKillBaseScript extends ReferenceAlias
 
 Float Property LootChance Auto Const Mandatory
 Perk[] Property LootPerks Auto Const Mandatory
-FormList Property LootRaces Auto Const Mandatory
+FormList Property LootRaces Auto Const
 FormList Property ExcludeKeywords Auto Const
 Form Property Loot Auto Const Mandatory
 Message Property LootPerkMessage Auto Const Mandatory
@@ -75,7 +75,7 @@ EndFunction
 Event Actor.OnKill(Actor akSender, Actor akVictim)
     Lock()
     If RollSpawn()
-        If LootRaces.HasForm(akVictim.GetRace())
+        If !LootRaces || LootRaces.HasForm(akVictim.GetRace())
             If !ExcludeKeywords || !akVictim.HasKeywordInFormList(ExcludeKeywords)
                 Player.RemovePerk(HighestRankPerk())
                 akVictim.AddItem(Loot)

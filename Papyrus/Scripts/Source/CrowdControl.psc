@@ -6,8 +6,9 @@ Chance CH = None
 LoseItemMisfortuneScript LoseItemMisfortune = None
 ContaminationMisfortuneScript ContaminationMisfortune = None
 RadiationHotspotMisfortuneScript RadiationHotspotMisfortune = None
-BountyFeralGhoulsScript BountyFeralGhouls = None
+Bounty:BountyFeralGhoulsScript BountyFeralGhouls = None
 Loot:LootNPCCookedFoodScript LootNPCCookedFood = None
+Loot:LootNPCWaterScript LootNPCWater = None
 
 Int[] ItemDie = None
 Int[] ItemResults = None
@@ -98,11 +99,15 @@ Function InitVars()
     EndIf
 
     If BountyFeralGhouls == None
-        BountyFeralGhouls = GetOwningQuest().GetAlias(0) as BountyFeralGhoulsScript
+        BountyFeralGhouls = GetOwningQuest().GetAlias(0) as Bounty:BountyFeralGhoulsScript
     EndIf
 
     If LootNPCCookedFood == None
         LootNPCCookedFood = GetOwningQuest().GetAlias(0) as Loot:LootNPCCookedFoodScript
+    EndIf
+
+    If LootNPCWater == None
+        LootNPCWater = GetOwningQuest().GetAlias(0) as Loot:LootNPCWaterScript
     EndIf
 EndFunction
 
@@ -549,6 +554,16 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
             PrintMessage(status)
         Else
             status = viewer + ", NPC cooked food maxed"
+            Respond(id, 1, status)
+            PrintMessage(status)
+        EndIf
+
+    elseif command.command == "loot-npc-water"
+        If LootNPCWater.Add()
+            Respond(id, 0, status)
+            PrintMessage(status)
+        Else
+            status = viewer + ", NPC water maxed"
             Respond(id, 1, status)
             PrintMessage(status)
         EndIf

@@ -133,8 +133,8 @@ Function ApplyMisfortune()
     EndIf
 
     Player.RemovePerk(HighestRankPerk())
-    Player.RemoveItem(item)
-    Player.AddItem(replaceItem)
+    Player.RemoveItem(item, abSilent = True)
+    Player.AddItem(replaceItem, abSilent = True)
     ContaminationMessage.Show()
 EndFunction
 

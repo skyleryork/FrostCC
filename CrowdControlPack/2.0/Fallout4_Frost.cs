@@ -141,6 +141,7 @@ namespace CrowdControl.Games.Packs.Fallout4_Frost
 			#region NPC Loot
 
 			new Effect("Cooked Food", $"loot__npc__cookedfood") { Price = GetPrice(25), Category = "NPC Loot" },
+			new Effect("Water", $"loot__npc__water") { Price = GetPrice(25), Category = "NPC Loot" },
 
 			#endregion
 

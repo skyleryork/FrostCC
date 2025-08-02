@@ -1,4 +1,4 @@
-Scriptname HostileSpawnBaseScript extends ReferenceAlias
+Scriptname Bounty:HostileSpawnBaseScript extends ReferenceAlias
 
 
 Int Property PumpTimerId = 1 AutoReadOnly

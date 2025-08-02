@@ -18,6 +18,7 @@ SET PexFragmentsPath="%PexPath%\Fragments\Quests"
 SET PexLootPath="%PexPath%\Loot"
 SET PscPath="%PexPath%\Source"
 SET PscFragmentsPath="%PexPath%\Source\Fragments\Quests"
+SET PscBountyPath="%PexPath%\Source\Bounty"
 SET PscLootPath="%PexPath%\Source\Loot"
 SETLOCAL EnableDelayedExpansion
 
@@ -31,6 +32,9 @@ for %%F in ("%PscPath%\*.psc") do (
     start "" /B cmd /c PapyrusCompiler.exe "%%F" -f="Institute_Papyrus_Flags.flg" -i="%F4SEScriptSourcePath%;%PscPath%;%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%PexPath%" -op
 )
 for %%F in ("%PscFragmentsPath%\*.psc") do (
+    start "" /B cmd /c PapyrusCompiler.exe "%%F" -f="Institute_Papyrus_Flags.flg" -i="%F4SEScriptSourcePath%;%PscPath%;%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%PexPath%" -op
+)
+for %%F in ("%PscBountyPath%\*.psc") do (
     start "" /B cmd /c PapyrusCompiler.exe "%%F" -f="Institute_Papyrus_Flags.flg" -i="%F4SEScriptSourcePath%;%PscPath%;%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%PexPath%" -op
 )
 for %%F in ("%PscLootPath%\*.psc") do (

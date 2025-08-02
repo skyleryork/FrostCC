@@ -1,0 +1,1 @@
+Scriptname Bounty:BountyFeralGhoulsScript extends Bounty:HostileSpawnBaseScript
