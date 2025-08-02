@@ -114,7 +114,7 @@ Perk Function HighestRankPerk()
 EndFunction
 
 
-Function DoSpawn()
+Function TrySpawn()
     Float minDistance = MinSpawnDistance
     Float maxDistance = MaxSpawnDistance
     SpawnActivatorScript:SpawnParams params = HostileParams
@@ -140,6 +140,7 @@ Function DoSpawn()
 
     If numFoundMarkers == 0
         ;Debug.Trace("No Markers")
+        Unlock()
         return
     EndIf
 
@@ -169,8 +170,8 @@ Event OnTimer(Int timerId)
         ;Debug.Trace("RollSpawn")
         Lock()
         If RollSpawn()
-            ;Debug.Trace("DoSpawn")
-            DoSpawn()
+            ;Debug.Trace("TrySpawn")
+            TrySpawn()
         Else
             Unlock()
         EndIf
