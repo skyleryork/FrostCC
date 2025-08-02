@@ -21,9 +21,11 @@ EndEvent
 
 
 Function Init(Form[] toSpawn, SpawnParams params)
+    Debug.Trace("SpawnActivatorScript Init")
     Spawns = new ObjectReference[toSpawn.Length]
     Int i = 0
-    while i < Spawns.Length
+    Int spawnCount = Math.Min(Utility.RandomInt(params.minQuantity, params.maxQuantity), Spawns.Length) as Int
+    while i < spawnCount
         ObjectReference thisSpawn = Self.PlaceAtMe(toSpawn[i], abInitiallyDisabled = True)
         Spawns[i] = thisSpawn
 

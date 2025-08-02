@@ -1,4 +1,4 @@
-Scriptname HostileSpawnScript extends ReferenceAlias
+Scriptname HostileSpawnBaseScript extends ReferenceAlias
 
 
 Int Property PumpTimerId = 1 AutoReadOnly
@@ -61,21 +61,23 @@ EndFunction
 
 
 Function ParseSettings()
-    Float chanceSetting = CrowdControlApi.GetFloatSetting("HostileSpawns", HostileSpawnChanceString, -1.0)
+    Float chanceSetting = CrowdControlApi.GetFloatSetting("Bounty", HostileSpawnChanceString, -1.0)
     If chanceSetting < 0.0
         chanceSetting = SpawnChance
     EndIf
 
-    Float durationSetting = CrowdControlApi.GetFloatSetting("HostileSpawns", HostileSpawnDurationString, -1.0)
+    Float durationSetting = CrowdControlApi.GetFloatSetting("Bounty", HostileSpawnDurationString, -1.0)
     If durationSetting < 0.0
         durationSetting = SpawnDuration
     EndIf
 
+    Debug.Trace("ParseSettings: chanceSetting = " + chanceSetting + ", durationSetting = " + durationSetting)
     ScaledSpawnChance = Chance.CalculateTimescaledChance(chanceSetting, durationSetting, PumpTimerInterval)
 EndFunction
 
 
 Event OnInit()
+    Debug.Trace("OnInit")
     If Player == None
         Player = Game.GetPlayer()
     EndIf
@@ -119,7 +121,7 @@ Function ApplyMisfortune()
     WorldSpace thisWorldspace = Player.GetWorldspace()
     ObjectReference[] markers = Player.FindAllReferencesOfType(HostileSpawnMarkers, maxDistance)
     ObjectReference[] foundMarkers = new ObjectReference[markers.Length]
-    
+
     Int numFoundMarkers = 0
     int i = 0
     While i < markers.Length
@@ -137,11 +139,13 @@ Function ApplyMisfortune()
     EndWhile
 
     If numFoundMarkers == 0
+        Debug.Trace("No Markers")
         return
     EndIf
 
     ObjectReference marker = foundMarkers[Utility.RandomInt(0, numFoundMarkers - 1)]
     SpawnActivatorScript spawner = marker.PlaceAtMe(HostileSpawnActivator) as SpawnActivatorScript
+    spawner.AddKeyword(HostileSpawnerKeyword)
 
     Form[] spawns = HostileSpawns
     Form[] toSpawn = new Form[Utility.RandomInt(params.minQuantity, params.maxQuantity)]
@@ -152,6 +156,8 @@ Function ApplyMisfortune()
         i += 1
     EndWhile
 
+    Player.RemovePerk(HighestRankPerk())
+
     spawner.Init(toSpawn, params)
 EndFunction
 
@@ -159,7 +165,9 @@ EndFunction
 Event OnTimer(Int timerId)
     If timerId == PumpTimerId
         Lock()
+        Debug.Trace("RollMisfortune")
         If RollMisfortune()
+            Debug.Trace("ApplyMisfortune")
             ApplyMisfortune()
         EndIf
         Unlock()

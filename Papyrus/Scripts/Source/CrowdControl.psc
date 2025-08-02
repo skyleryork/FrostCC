@@ -3,11 +3,11 @@
 Scriptname CrowdControl extends ReferenceAlias
 
 Chance CH = None
-HostileSpawnScript HostileSpawn = None
 HazardSpawnScript HazardSpawn = None
 LoseItemMisfortuneScript LoseItemMisfortune = None
 ContaminationMisfortuneScript ContaminationMisfortune = None
 RadiationHotspotMisfortuneScript RadiationHotspotMisfortune = None
+BountyFeralGhoulsScript BountyFeralGhouls = None
 
 Int[] ItemDie = None
 Int[] ItemResults = None
@@ -85,10 +85,6 @@ Function InitVars()
         CH = GetOwningQuest().GetAlias(0) as Chance
 	Endif
 
-    If HostileSpawn == None
-        HostileSpawn = GetOwningQuest().GetAlias(0) as HostileSpawnScript
-	Endif
-
     If HazardSpawn == None
         HazardSpawn = GetOwningQuest().GetAlias(0) as HazardSpawnScript
 	Endif
@@ -103,6 +99,10 @@ Function InitVars()
 
     If RadiationHotspotMisfortune == None
         RadiationHotspotMisfortune = GetOwningQuest().GetAlias(0) as RadiationHotspotMisfortuneScript
+    EndIf
+
+    If BountyFeralGhouls == None
+        BountyFeralGhouls = GetOwningQuest().GetAlias(0) as BountyFeralGhoulsScript
     EndIf
 EndFunction
 
@@ -562,17 +562,15 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
             PrintMessage(status)
         EndIf
 
-    elseif command.command == "spawnstalkers"
-        ; SafeSpawnBaseScript:SpawnData data = MakeSpawnData(command)
-
-        ; If !HostileSpawn.QueueSpawn(data)
-        ;     status = viewer + ", too many hostile spawns pending"
-        ;     PrintMessage(status)
-        ;     Respond(id, 1, status)
-        ; Else
-        ;     PrintMessage(status)
-        ;     Respond(id, 0, status)
-        ; EndIf
+    elseif command.command == "bounty-feralghouls"
+        If BountyFeralGhouls.Add()
+            Respond(id, 0, status)
+            PrintMessage(status)
+        Else
+            status = viewer + ", feral ghouls maxed"
+            Respond(id, 1, status)
+            PrintMessage(status)
+        EndIf
 
     elseif command.command == "hazard"
         SafeSpawnBaseScript:SpawnData data = MakeSpawnData(command)

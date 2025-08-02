@@ -132,6 +132,12 @@ namespace CrowdControl.Games.Packs.Fallout4_Frost
 
 			#endregion
 
+			#region Bounties
+
+			new Effect("Feral Ghouls", $"bounty-feralghouls") { Price = GetPrice(25), Category = "Bounties" },
+
+			#endregion
+
 			#region TEST
 
 			new Effect("TEST", $"test") { Price = GetPrice(1), Category = "TEST" },
