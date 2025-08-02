@@ -11,21 +11,19 @@ EndStruct
 
 
 Faction Property PlayerEnemyFaction Auto Const Mandatory
+Container Property SpawnLootContainer Auto Const Mandatory
 
 ObjectReference[] Spawns = None
-Form Loot = None
-
-
-Event OnInit()
-EndEvent
+ObjectReference LootContainer = None
+Int[] LootDistribution = None
+Form[] LootItems = None
 
 
 Function Init(Form[] toSpawn, SpawnParams params)
-    Debug.Trace("SpawnActivatorScript Init")
+    ;Debug.Trace("SpawnActivatorScript Init")
     Spawns = new ObjectReference[toSpawn.Length]
     Int i = 0
-    Int spawnCount = Math.Min(Utility.RandomInt(params.minQuantity, params.maxQuantity), Spawns.Length) as Int
-    while i < spawnCount
+    while i < Spawns.Length
         ObjectReference thisSpawn = Self.PlaceAtMe(toSpawn[i], abInitiallyDisabled = True)
         Spawns[i] = thisSpawn
 
@@ -65,21 +63,63 @@ Function Init(Form[] toSpawn, SpawnParams params)
         i += 1
     EndWhile
 
-    Loot = params.loot
+    If params.loot
+        LootContainer = Self.PlaceAtMe(SpawnLootContainer, abInitiallyDisabled = True)
+        LootContainer.Lock()
+        LootContainer.AddItem(params.loot)
+
+        Int flatCount = 0
+        Form[] items = LootContainer.GetInventoryItems()
+        i = 0
+        While i < items.Length
+            flatCount += LootContainer.GetItemCount(items[i])
+            i += 1
+        EndWhile
+
+        LootItems = new Form[flatCount]
+        i = 0
+        Int j = 0
+        While i < items.Length
+            Int count = LootContainer.GetItemCount(items[i])
+            While count
+                LootItems[j] = items[i]
+                count -= 1
+                j += 1
+            EndWhile
+            i += 1
+        EndWhile
+
+        LootDistribution = new Int[LootItems.Length]
+        i = 0
+        While i < LootDistribution.Length
+            LootDistribution[i] = Utility.RandomInt(0, Spawns.Length - 1)
+            i += 1
+        EndWhile
+    EndIf
 EndFunction
 
 
 Function HandleSpawnDeath(ObjectReference spawn)
-    Int i = Spawns.Find(spawn)
-    If i < 0
-        Debug.Trace("SpawnActivatorScript::HandleSpawnDeath - unknown spawn!")
+    Int spawnIndex = Spawns.Find(spawn)
+    If spawnIndex < 0
+        ;Debug.Trace("SpawnActivatorScript::HandleSpawnDeath - unknown spawn!")
         return
     EndIf
 
-    Spawns[i] = None
+    If LootContainer && LootItems && LootDistribution
+        Int i = 0
+        While i < LootDistribution.Length
+            If LootDistribution[i] == spawnIndex
+                LootContainer.RemoveItem(LootItems[i], 1, True, spawn)
+            EndIf
+            i += 1
+        EndWhile
+    EndIf
+
+    Spawns[spawnIndex] = None
 
     Int count = 0
-    i = 0
+    Int i = 0
     While i < Spawns.Length
         If Spawns[i]
             count += 1
@@ -87,17 +127,11 @@ Function HandleSpawnDeath(ObjectReference spawn)
         i += 1
     EndWhile
 
-    Bool spawnLoot = Loot != None
-    If count && Utility.RandomInt(0, Spawns.Length - 1)
-        spawnLoot = False
-    EndIf
-
-    If spawnLoot
-        spawn.AddItem(Loot)
-        Loot = None
-    EndIf
-
     If !count
+        If LootContainer
+            LootContainer.Delete()
+        EndIf
+
         Disable()
         Delete()
     EndIf

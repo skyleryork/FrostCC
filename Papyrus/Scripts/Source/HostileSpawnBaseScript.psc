@@ -19,6 +19,7 @@ Perk[] Property HostileSpawnPerks Auto Const Mandatory
 Keyword Property HostileSpawnerKeyword Auto Const Mandatory
 FormList Property HostileSpawnMarkers Auto Const Mandatory
 
+Message Property HostileSpawnMessage Auto Const Mandatory
 Message Property HostileSpawnPerkMessage Auto Const Mandatory
 
 String Property HostileSpawnChanceString Auto Const Mandatory
@@ -71,7 +72,7 @@ Function ParseSettings()
         durationSetting = SpawnDuration
     EndIf
 
-    Debug.Trace("ParseSettings: chanceSetting = " + chanceSetting + ", durationSetting = " + durationSetting)
+    ;Debug.Trace("ParseSettings: chanceSetting = " + chanceSetting + ", durationSetting = " + durationSetting)
     ScaledSpawnChance = Chance.CalculateTimescaledChance(chanceSetting, durationSetting, PumpTimerInterval)
 EndFunction
 
@@ -93,10 +94,13 @@ Event OnPlayerLoadGame()
 EndEvent
 
 
-Bool Function RollMisfortune()
+Bool Function RollSpawn()
+    Lock()
     If !Player.HasPerk(HostileSpawnPerks[0])
+        Unlock()
         return False
     EndIf
+    Unlock()
     return Utility.RandomFloat() <= ScaledSpawnChance
 EndFunction
 
@@ -113,7 +117,7 @@ Perk Function HighestRankPerk()
 EndFunction
 
 
-Function ApplyMisfortune()
+Function DoSpawn()
     Float minDistance = MinSpawnDistance
     Float maxDistance = MaxSpawnDistance
     SpawnActivatorScript:SpawnParams params = HostileParams
@@ -126,12 +130,11 @@ Function ApplyMisfortune()
     int i = 0
     While i < markers.Length
         float distance = Player.GetDistance(markers[i])
-        If distance >= minDistance && distance <= maxDistance && markers[i].GetWorldspace() == thisWorldspace && !Player.HasDirectLOS(markers[i]) && !markers[i].HasDirectLOS(Player)
-            If markers[i].FindAllReferencesWithKeyword(HostileSpawnerKeyword, 1.0).Length == 0
-                foundMarkers[numFoundMarkers] = markers[i]
-                numFoundMarkers += 1
-                If numFoundMarkers == foundMarkers.Length
-                    i = markers.Length
+        If distance >= minDistance && distance <= maxDistance && markers[i].GetWorldspace() == thisWorldspace
+            If !Player.HasDetectionLOS(markers[i]) && !markers[i].HasDirectLOS(Player)
+                If markers[i].FindAllReferencesWithKeyword(HostileSpawnerKeyword, minDistance).Length == 0
+                    foundMarkers[numFoundMarkers] = markers[i]
+                    numFoundMarkers += 1
                 EndIf
             EndIf
         EndIf
@@ -139,7 +142,7 @@ Function ApplyMisfortune()
     EndWhile
 
     If numFoundMarkers == 0
-        Debug.Trace("No Markers")
+        ;Debug.Trace("No Markers")
         return
     EndIf
 
@@ -152,11 +155,15 @@ Function ApplyMisfortune()
     Int[] indices = ChanceApi.ShuffledIndices(spawns.Length)
     i = 0
     While i < toSpawn.Length
-        toSpawn[i] = spawns[indices[i]]
+        toSpawn[i] = spawns[indices[i % indices.Length]]
         i += 1
     EndWhile
 
+    Lock()
     Player.RemovePerk(HighestRankPerk())
+    Unlock()
+
+    HostileSpawnMessage.Show()
 
     spawner.Init(toSpawn, params)
 EndFunction
@@ -164,13 +171,11 @@ EndFunction
 
 Event OnTimer(Int timerId)
     If timerId == PumpTimerId
-        Lock()
-        Debug.Trace("RollMisfortune")
-        If RollMisfortune()
-            Debug.Trace("ApplyMisfortune")
-            ApplyMisfortune()
+        ;Debug.Trace("RollSpawn")
+        If RollSpawn()
+            ;Debug.Trace("DoSpawn")
+            DoSpawn()
         EndIf
-        Unlock()
         StartTimer(PumpTimerInterval, PumpTimerId)
     EndIf
 EndEvent
