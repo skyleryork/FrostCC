@@ -102,21 +102,25 @@ EndFunction
 Function HandleSpawnDeath(ObjectReference spawn)
     Int spawnIndex = Spawns.Find(spawn)
     If spawnIndex < 0
-        ;Debug.Trace("SpawnActivatorScript::HandleSpawnDeath - unknown spawn!")
+        Debug.Trace("SpawnActivatorScript::HandleSpawnDeath - unknown spawn!")
+        return
+    ElseIf !Spawns[spawnIndex]
+        Debug.Trace("SpawnActivatorScript::HandleSpawnDeath - repeat spawn!")
         return
     EndIf
+
+    Spawns[spawnIndex] = None
 
     If LootContainer && LootItems && LootDistribution
         Int i = 0
         While i < LootDistribution.Length
             If LootDistribution[i] == spawnIndex
                 LootContainer.RemoveItem(LootItems[i], 1, True, spawn)
+                LootItems[i] = None
             EndIf
             i += 1
         EndWhile
     EndIf
-
-    Spawns[spawnIndex] = None
 
     Int count = 0
     Int i = 0

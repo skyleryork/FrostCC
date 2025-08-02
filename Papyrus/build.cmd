@@ -15,8 +15,10 @@ SET ArchiveSource="%CrowdControlPath%archive.source"
 SET ArchiveOutput="%FalloutPath%\Data\CrowdControl - Main.ba2"
 SET PexPath=%CrowdControlPath%Scripts
 SET PexFragmentsPath="%PexPath%\Fragments\Quests"
+SET PexLootPath="%PexPath%\Loot"
 SET PscPath="%PexPath%\Source"
 SET PscFragmentsPath="%PexPath%\Source\Fragments\Quests"
+SET PscLootPath="%PexPath%\Source\Loot"
 SETLOCAL EnableDelayedExpansion
 
 copy /Y %FalloutDataPath%CrowdControl.esp ".\esp\"
@@ -30,6 +32,9 @@ for %%F in ("%PscPath%\*.psc") do (
 )
 for %%F in ("%PscFragmentsPath%\*.psc") do (
     start "" /B cmd /c PapyrusCompiler.exe "%%F" -f="Institute_Papyrus_Flags.flg" -i="%F4SEScriptSourcePath%;%PscPath%;%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%PexFragmentsPath%" -op
+)
+for %%F in ("%PscLootPath%\*.psc") do (
+    start "" /B cmd /c PapyrusCompiler.exe "%%F" -f="Institute_Papyrus_Flags.flg" -i="%F4SEScriptSourcePath%;%PscPath%;%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%PexPath%" -op
 )
 
 echo Waiting for script compilers to finish...
@@ -46,6 +51,9 @@ for %%F in ("%PexPath%\*.pex") do (
     echo %%F >> "%CrowdControlPath%archive.source"
 )
 for %%F in ("%PexFragmentsPath%\*.pex") do (
+    echo %%F >> "%CrowdControlPath%archive.source"
+)
+for %%F in ("%PexLootPath%\*.pex") do (
     echo %%F >> "%CrowdControlPath%archive.source"
 )
 

@@ -95,12 +95,9 @@ EndEvent
 
 
 Bool Function RollSpawn()
-    Lock()
     If !Player.HasPerk(HostileSpawnPerks[0])
-        Unlock()
         return False
     EndIf
-    Unlock()
     return Utility.RandomFloat() <= ScaledSpawnChance
 EndFunction
 
@@ -146,6 +143,9 @@ Function DoSpawn()
         return
     EndIf
 
+    Player.RemovePerk(HighestRankPerk())
+    Unlock()
+
     ObjectReference marker = foundMarkers[Utility.RandomInt(0, numFoundMarkers - 1)]
     SpawnActivatorScript spawner = marker.PlaceAtMe(HostileSpawnActivator) as SpawnActivatorScript
     spawner.AddKeyword(HostileSpawnerKeyword)
@@ -159,22 +159,20 @@ Function DoSpawn()
         i += 1
     EndWhile
 
-    Lock()
-    Player.RemovePerk(HighestRankPerk())
-    Unlock()
-
-    HostileSpawnMessage.Show()
-
     spawner.Init(toSpawn, params)
+    HostileSpawnMessage.Show()
 EndFunction
 
 
 Event OnTimer(Int timerId)
     If timerId == PumpTimerId
         ;Debug.Trace("RollSpawn")
+        Lock()
         If RollSpawn()
             ;Debug.Trace("DoSpawn")
             DoSpawn()
+        Else
+            Unlock()
         EndIf
         StartTimer(PumpTimerInterval, PumpTimerId)
     EndIf

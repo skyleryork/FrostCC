@@ -117,8 +117,8 @@ Function ApplyMisfortune()
 
     ObjectReference[] hotspots = Player.FindAllReferencesOfType(hotspot, spacing)
     If hotspots.Length == 0
-        Player.PlaceAtMe(hotspot)
         Player.RemovePerk(thePerk)
+        Player.PlaceAtMe(hotspot)
         RadiationMessage.Show(rads)
     EndIf
 EndFunction
