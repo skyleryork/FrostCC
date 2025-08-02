@@ -3,7 +3,6 @@
 Scriptname CrowdControl extends ReferenceAlias
 
 Chance CH = None
-HazardSpawnScript HazardSpawn = None
 LoseItemMisfortuneScript LoseItemMisfortune = None
 ContaminationMisfortuneScript ContaminationMisfortune = None
 RadiationHotspotMisfortuneScript RadiationHotspotMisfortune = None
@@ -84,10 +83,6 @@ Function InitVars()
 
     If CH == None
         CH = GetOwningQuest().GetAlias(0) as Chance
-	Endif
-
-    If HazardSpawn == None
-        HazardSpawn = GetOwningQuest().GetAlias(0) as HazardSpawnScript
 	Endif
 
     If LoseItemMisfortune == None
@@ -456,35 +451,6 @@ Function AttachMod(ObjectReference spawnedItem, string modFormId)
     endif
 endfunction
 
-SafeSpawnBaseScript:SpawnData Function MakeSpawnData(ParsedCommand command)
-    SafeSpawnBaseScript:SpawnData data = new SafeSpawnBaseScript:SpawnData
-    data.theForm = FindForm(command.id)
-    data.minQuantity = command.minQuantity
-    data.maxQuantity = command.maxQuantity
-
-    If CrowdControlApi.StringContains(command.param0, "~")
-        string[] quantities = CrowdControlApi.StringSplit(command.param0, "~")
-        data.minDistance = quantities[0] as Int
-        data.maxDistance = quantities[1] as Int
-    Else
-        data.minDistance = command.param0 as Int
-        data.maxDistance = data.minDistance
-    EndIf
-
-    If command.param1 != ""
-        data.radius = command.param1 as Float
-    Else
-        data.radius = 0
-    EndIf
-
-    If command.param2 != ""
-        data.exclusionRadius = command.param2 as Float
-    Else
-        data.exclusionRadius = 0
-    EndIf
-
-    return data
-EndFunction
 
 Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
     ParsedCommand command = ParseCrowdControlCommand(ccCommand)
@@ -585,18 +551,6 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
             status = viewer + ", NPC cooked food maxed"
             Respond(id, 1, status)
             PrintMessage(status)
-        EndIf
-
-    elseif command.command == "hazard"
-        SafeSpawnBaseScript:SpawnData data = MakeSpawnData(command)
-
-        If !HazardSpawn.QueueSpawn(data)
-            status = viewer + ", too many hazard spawns pending"
-            PrintMessage(status)
-            Respond(id, 1, status)
-        Else
-            PrintMessage(status)
-            Respond(id, 0, status)
         EndIf
 
     elseif command.command == "test"
