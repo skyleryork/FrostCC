@@ -4,8 +4,8 @@ Int Property PumpTimerId = 1 AutoReadOnly
 Float Property PumpTimerInterval = 1 AutoReadOnly
 
 
-Float Property MisfortuneChance Auto Mandatory
-Float Property MisfortuneDuration Auto Mandatory
+Float Property MisfortuneChance Auto Const Mandatory
+Float Property MisfortuneDuration Auto Const Mandatory
 
 Hazard[] Property RadiationHotspots Auto Const Mandatory
 Float[] Property RadiationHotspotSpacing Auto Const Mandatory

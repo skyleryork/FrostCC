@@ -5,13 +5,13 @@ Int Property PumpTimerId = 1 AutoReadOnly
 Float Property PumpTimerInterval = 0.5 AutoReadOnly
 
 
-Float Property MisfortuneChance Auto Mandatory
-Float Property MisfortuneDuration Auto Mandatory
+Float Property MisfortuneChance Auto Const Mandatory
+Float Property MisfortuneDuration Auto Const Mandatory
 Perk[] Property LoseItemPerks Auto Const Mandatory
 
-FormList Property ItemKeywords Auto Mandatory
-FormList Property ItemSounds Auto Mandatory
-Int[] Property ItemDetection Auto Mandatory
+FormList Property ItemKeywords Auto Const Mandatory
+FormList Property ItemSounds Auto Const Mandatory
+Int[] Property ItemDetection Auto Const Mandatory
 
 Message Property LoseItemMessage Auto Const Mandatory
 Message Property LoseItemPerkMessage Auto Const Mandatory

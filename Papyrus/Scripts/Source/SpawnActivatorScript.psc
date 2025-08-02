@@ -2,6 +2,8 @@ Scriptname SpawnActivatorScript extends ObjectReference
 
 
 Struct SpawnParams
+    Int minQuantity
+    Int maxQuantity
     Float spawnRadius
     Bool hostile
     Form loot
@@ -18,11 +20,11 @@ Event OnInit()
 EndEvent
 
 
-Function Init(ObjectReference target, Form[] toSpawn, SpawnParams params)
+Function Init(Form[] toSpawn, SpawnParams params)
     Spawns = new ObjectReference[toSpawn.Length]
     Int i = 0
     while i < Spawns.Length
-        ObjectReference thisSpawn = target.PlaceAtMe(toSpawn[i], abInitiallyDisabled = True)
+        ObjectReference thisSpawn = Self.PlaceAtMe(toSpawn[i], abInitiallyDisabled = True)
         Spawns[i] = thisSpawn
 
         thisSpawn.MoveToNearestNavmeshLocation()
@@ -40,15 +42,15 @@ Function Init(ObjectReference target, Form[] toSpawn, SpawnParams params)
 
         Actor thisActor = thisSpawn as Actor
         If thisActor
-            RegisterForRemoteEvent(theActor, "OnDying")
+            RegisterForRemoteEvent(thisActor, "OnDying")
             If params.hostile
-                Faction theFaction = theActor.GetFactionOwner()
+                Faction theFaction = thisActor.GetFactionOwner()
                 If !theFaction || !theFaction.IsPlayerEnemy()
-                    theActor.AddToFaction(PlayerEnemyFaction)
+                    thisActor.AddToFaction(PlayerEnemyFaction)
                 EndIf
-                theActor.StopCombat()
-                If theActor.GetValue(Game.GetAggressionAV()) < 2
-                    theActor.SetValue(Game.GetAggressionAV(), 2)
+                thisActor.StopCombat()
+                If thisActor.GetValue(Game.GetAggressionAV()) < 2
+                    thisActor.SetValue(Game.GetAggressionAV(), 2)
                 EndIf
             EndIf
         Else

@@ -5,12 +5,12 @@ Int Property PumpTimerId = 1 AutoReadOnly
 Float Property PumpTimerInterval = 1 AutoReadOnly
 
 
-Float Property MisfortuneChance Auto Mandatory
-Float Property MisfortuneDuration Auto Mandatory
+Float Property MisfortuneChance Auto Const Mandatory
+Float Property MisfortuneDuration Auto Const Mandatory
 
 Perk[] Property ContaminationPerks Auto Const Mandatory
-FormList Property Pristine Auto Mandatory
-FormList Property Contaminated Auto Mandatory
+FormList Property Pristine Auto Const Mandatory
+FormList Property Contaminated Auto Const Mandatory
 
 Message Property ContaminationMessage Auto Const Mandatory
 Message Property ContaminationPerkMessage Auto Const Mandatory
@@ -110,7 +110,7 @@ Perk Function HighestRankPerk()
 EndFunction
 
 
-Bool Function ApplyMisfortune()
+Function ApplyMisfortune()
     Form[] allItems = Player.GetInventoryItems()
     Int[] indices = ChanceApi.ShuffledIndices(allItems.Length)
 
@@ -129,15 +129,13 @@ Bool Function ApplyMisfortune()
     EndWhile
 
     If !item || !replaceItem
-        return False
+        return
     EndIf
 
     Player.RemovePerk(HighestRankPerk())
     Player.RemoveItem(item)
     Player.AddItem(replaceItem)
     ContaminationMessage.Show()
-
-    return True
 EndFunction
 
 

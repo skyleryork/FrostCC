@@ -1,18 +1,23 @@
-Scriptname HostileSpawnScript extends ObjectReference
-
+Scriptname HostileSpawnScript extends ReferenceAlias
 
 
 Int Property PumpTimerId = 1 AutoReadOnly
 Float Property PumpTimerInterval = 1.0 AutoReadOnly
 
 
-Float Property SpawnChance Auto Mandatory
-Float Property SpawnDuration Auto Mandatory
+Float Property SpawnChance Auto Const Mandatory
+Float Property SpawnDuration Auto Const Mandatory
 
+Float Property MinSpawnDistance Auto Const Mandatory
+Float Property MaxSpawnDistance Auto Const Mandatory
 
+Form[] Property HostileSpawns Auto Const Mandatory
+SpawnActivatorScript:SpawnParams Property HostileParams Auto Const Mandatory
+
+Activator Property HostileSpawnActivator Auto Const Mandatory
 Perk[] Property HostileSpawnPerks Auto Const Mandatory
 Keyword Property HostileSpawnerKeyword Auto Const Mandatory
-FormList Property SpawnMarkers Auto Const Mandatory
+FormList Property HostileSpawnMarkers Auto Const Mandatory
 
 Message Property HostileSpawnPerkMessage Auto Const Mandatory
 
@@ -58,12 +63,12 @@ EndFunction
 Function ParseSettings()
     Float chanceSetting = CrowdControlApi.GetFloatSetting("HostileSpawns", HostileSpawnChanceString, -1.0)
     If chanceSetting < 0.0
-        chanceSetting = MisfortuneChance
+        chanceSetting = SpawnChance
     EndIf
 
     Float durationSetting = CrowdControlApi.GetFloatSetting("HostileSpawns", HostileSpawnDurationString, -1.0)
     If durationSetting < 0.0
-        durationSetting = MisfortuneDuration
+        durationSetting = SpawnDuration
     EndIf
 
     ScaledSpawnChance = Chance.CalculateTimescaledChance(chanceSetting, durationSetting, PumpTimerInterval)
@@ -78,7 +83,7 @@ Event OnInit()
     ParseSettings()
 
     StartTimer(Utility.RandomFloat(0.0, PumpTimerInterval), PumpTimerId)
-EndFunction
+EndEvent
 
 
 Event OnPlayerLoadGame()
@@ -86,30 +91,41 @@ Event OnPlayerLoadGame()
 EndEvent
 
 
-ObjectReference[] Function PumpQueue(Bool enableSpawns = True)
-    If QueueSize == 0
-        ;Debug.Trace("SafeSpawnBaseScript::PumpQueue -- empty")
-        StartTimer(PumpTimerInterval, PumpTimerId)
-        return None
+Bool Function RollMisfortune()
+    If !Player.HasPerk(HostileSpawnPerks[0])
+        return False
     EndIf
+    return Utility.RandomFloat() <= ScaledSpawnChance
+EndFunction
 
-    If ( Utility.GetCurrentRealTime() - LastSpawn ) < SpawnDelay
-        ;Debug.Trace("SafeSpawnBaseScript::PumpQueue -- too soon")
-        StartTimer(PumpTimerInterval, PumpTimerId)
-        return None
-    EndIf
 
-    SpawnData data = Queue[0]
+Perk Function HighestRankPerk()
+    Int i = HostileSpawnPerks.Length - 1
+    While i >= 0
+        If Player.HasPerk(HostileSpawnPerks[i])
+            return HostileSpawnPerks[i]
+        EndIf
+        i -= 1
+    EndWhile
+    return None
+EndFunction
+
+
+Function ApplyMisfortune()
+    Float minDistance = MinSpawnDistance
+    Float maxDistance = MaxSpawnDistance
+    SpawnActivatorScript:SpawnParams params = HostileParams
+
     WorldSpace thisWorldspace = Player.GetWorldspace()
-    ObjectReference[] markers = Player.FindAllReferencesOfType(SpawnMarkers, data.maxDistance)
+    ObjectReference[] markers = Player.FindAllReferencesOfType(HostileSpawnMarkers, maxDistance)
+    ObjectReference[] foundMarkers = new ObjectReference[markers.Length]
     
-    ObjectReference[] foundMarkers = new ObjectReference[SpawnMarkerCount]
     Int numFoundMarkers = 0
     int i = 0
     While i < markers.Length
         float distance = Player.GetDistance(markers[i])
-        If distance >= data.minDistance && distance <= data.maxDistance && markers[i].GetWorldspace() == thisWorldspace && !Player.HasDirectLOS(markers[i]) && !markers[i].HasDirectLOS(Player)
-            If data.exclusionRadius <= 0.0 || markers[i].FindAllReferencesOfType(data.theForm, data.exclusionRadius).Length == 0
+        If distance >= minDistance && distance <= maxDistance && markers[i].GetWorldspace() == thisWorldspace && !Player.HasDirectLOS(markers[i]) && !markers[i].HasDirectLOS(Player)
+            If markers[i].FindAllReferencesWithKeyword(HostileSpawnerKeyword, 1.0).Length == 0
                 foundMarkers[numFoundMarkers] = markers[i]
                 numFoundMarkers += 1
                 If numFoundMarkers == foundMarkers.Length
@@ -121,49 +137,32 @@ ObjectReference[] Function PumpQueue(Bool enableSpawns = True)
     EndWhile
 
     If numFoundMarkers == 0
-        ;Debug.Trace("SafeSpawnBaseScript::PumpQueue -- no markers of " + markers.Length + " between " + data.minDistance + " and " + data.maxDistance)
-        StartTimer(PumpTimerInterval, PumpTimerId)
-        return None
+        return
     EndIf
 
-    ; lock to update queue
-    Lock()
+    ObjectReference marker = foundMarkers[Utility.RandomInt(0, numFoundMarkers - 1)]
+    SpawnActivatorScript spawner = marker.PlaceAtMe(HostileSpawnActivator) as SpawnActivatorScript
+
+    Form[] spawns = HostileSpawns
+    Form[] toSpawn = new Form[Utility.RandomInt(params.minQuantity, params.maxQuantity)]
+    Int[] indices = ChanceApi.ShuffledIndices(spawns.Length)
     i = 0
-    While i < ( QueueSize - 1 )
-        Queue[i] = Queue[i + 1]
-        i += 1
-    EndWhile
-    Queue[i] = None
-    QueueSize -= 1
-    Unlock()
-    
-    ObjectReference foundMarker = foundMarkers[Utility.RandomInt(0, numFoundMarkers - 1)]
-    i = 0
-    Int quantity = Utility.RandomInt(data.minQuantity, data.maxQuantity)
-    ObjectReference[] spawned = new ObjectReference[quantity]
-    while i < quantity
-        ;Debug.Trace("SafeSpawnBaseScript::PumpQueue -- spawning " + (i + 1) + " of " + quantity)
-        ObjectReference thisSpawn = foundMarker.PlaceAtMe(data.theForm, abInitiallyDisabled = True)
-        Float offsetX = 0
-        Float offsetY = 0
-        If data.radius
-            Float randomAngle = Utility.RandomFloat(0.0, 360.0)
-            Float randomDistance = Utility.RandomFloat(0.0, data.radius)
-            offsetX = Math.Cos(randomAngle) * randomDistance
-            offsetY = Math.Sin(randomAngle) * randomDistance
-        EndIf
-        thisSpawn.MoveTo(foundMarker, offsetX, offsetY)
-        thisSpawn.SetAngle(0.0, thisSpawn.GetAngleY(), thisSpawn.GetAngleZ())
-        If enableSpawns
-            thisSpawn.Enable()
-        EndIf
-        spawned[i] = thisSpawn
+    While i < toSpawn.Length
+        toSpawn[i] = spawns[indices[i]]
         i += 1
     EndWhile
 
-    LastSpawn = Utility.GetCurrentRealTime()
-    StartTimer(PumpTimerInterval, PumpTimerId)
-
-    ;Debug.Trace("SafeSpawnBaseScript::PumpQueue -- done spawning")
-    return spawned
+    spawner.Init(toSpawn, params)
 EndFunction
+
+
+Event OnTimer(Int timerId)
+    If timerId == PumpTimerId
+        Lock()
+        If RollMisfortune()
+            ApplyMisfortune()
+        EndIf
+        Unlock()
+        StartTimer(PumpTimerInterval, PumpTimerId)
+    EndIf
+EndEvent

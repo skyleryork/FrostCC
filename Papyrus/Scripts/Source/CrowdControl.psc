@@ -563,16 +563,16 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         EndIf
 
     elseif command.command == "spawnstalkers"
-        SafeSpawnBaseScript:SpawnData data = MakeSpawnData(command)
+        ; SafeSpawnBaseScript:SpawnData data = MakeSpawnData(command)
 
-        If !HostileSpawn.QueueSpawn(data)
-            status = viewer + ", too many hostile spawns pending"
-            PrintMessage(status)
-            Respond(id, 1, status)
-        Else
-            PrintMessage(status)
-            Respond(id, 0, status)
-        EndIf
+        ; If !HostileSpawn.QueueSpawn(data)
+        ;     status = viewer + ", too many hostile spawns pending"
+        ;     PrintMessage(status)
+        ;     Respond(id, 1, status)
+        ; Else
+        ;     PrintMessage(status)
+        ;     Respond(id, 0, status)
+        ; EndIf
 
     elseif command.command == "hazard"
         SafeSpawnBaseScript:SpawnData data = MakeSpawnData(command)
