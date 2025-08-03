@@ -1,6 +1,7 @@
 Scriptname RPGRuntimeScript extends ReferenceAlias
 
 
+CustomEvent OnParseSettings
 CustomEvent OnInterval
 CustomEvent OnRadiation
 CustomEvent OnSprinting
@@ -140,6 +141,7 @@ Function RegisterMisfortune(StaticData thisStaticData)
     Unlock()
 
     ParseSettings(thisStaticData, thisRuntimeData)
+    thisStaticData.ref.RegisterForCustomEvent(Self, "OnParseSettings")
 
     If thisStaticData.type == TypeIntervalValue
         thisStaticData.ref.RegisterForCustomEvent(Self, "OnInterval")
@@ -257,6 +259,7 @@ Event OnPlayerLoadGame()
             i += 1
         EndWhile
     EndIf
+    SendCustomEvent("OnParseSettings", None)
 EndEvent
 
 
@@ -281,7 +284,7 @@ Event Actor.OnKill(Actor akSender, Actor akVictim)
     While i < theStaticData.Length
         If theStaticData[i].type == TypeKillValue
             If Roll(theRuntimeData[i].count, theRuntimeData[i].calculatedChance)
-                Var[] args = new Var[3]
+                Var[] args = new Var[4]
                 args[0] = theStaticData[i].ref
                 args[1] = akSender
                 args[2] = akVictim
@@ -321,9 +324,9 @@ Event OnTimer(Int timerId)
         If Roll(thisRuntimeData.count, thisRuntimeData.calculatedChance)
             Var[] args = None
             If extraArgs
-                args = new Var[2 + extraArgs.Length]
+                args = new Var[3 + extraArgs.Length]
             Else
-                args = new Var[2]
+                args = new Var[3]
             EndIf
             args[0] = thisStaticData.ref
             args[1] = Player
@@ -331,7 +334,7 @@ Event OnTimer(Int timerId)
             If extraArgs
                 Int i = 0
                 While i < extraArgs.Length
-                    args[i + 2] = extraArgs[i]
+                    args[i + 3] = extraArgs[i]
                     i += 1
                 EndWhile
             EndIf

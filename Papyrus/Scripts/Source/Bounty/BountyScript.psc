@@ -17,11 +17,16 @@ FormList Property BountySpawnMarkers Auto Const Mandatory
 FormList Property BountyPerks Auto Const Mandatory
 Message Property BountyMessage Auto Const Mandatory
 Message Property BountyPerkMessage Auto Const Mandatory
+
 String Property BountyChanceConfig Auto Const Mandatory
 String Property BountyDurationConfig Auto Const Mandatory
+String Property BountyMinSpawnDistanceConfig Auto Const Mandatory
+String Property BountyMaxSpawnDistanceConfig Auto Const Mandatory
 
 
 RPGRuntimeScript Runtime = None
+Float minSpawnDistance = 0.0
+Float maxSpawnDistance = 0.0
 
 
 Bool Function Add()
@@ -48,8 +53,21 @@ Event OnInit()
         data.durationConfig = BountyDurationConfig
         Runtime.RegisterMisfortune(data)
 
+        ParseSettings()
+
         Debug.Trace("Bounty:BountyScript: registered")
     EndIf
+EndEvent
+
+
+Function ParseSettings()
+    minSpawnDistance = CrowdControlApi.GetFloatSetting("RPGRuntime", BountyMinSpawnDistanceConfig, BountyMinSpawnDistance)
+    maxSpawnDistance = CrowdControlApi.GetFloatSetting("RPGRuntime", BountyMaxSpawnDistanceConfig, BountyMaxSpawnDistance)
+EndFunction
+
+
+Event RPGRuntimeScript.OnParseSettings(RPGRuntimeScript ref, Var[] args)
+    ParseSettings()
 EndEvent
 
 
@@ -57,24 +75,21 @@ Event RPGRuntimeScript.OnInterval(RPGRuntimeScript ref, Var[] args)
     If (args[0] as ScriptObject) != Self
         return
     EndIf
-    
-    Actor Player = args[1] as Actor
 
-    Float minDistance = BountyMinSpawnDistance
-    Float maxDistance = BountyMaxSpawnDistance
+    Actor Player = args[1] as Actor
     Bounty:BountySpawnActivatorScript:BountyParams params = BountyParams
 
     WorldSpace thisWorldspace = Player.GetWorldspace()
-    ObjectReference[] markers = Player.FindAllReferencesOfType(BountySpawnMarkers, maxDistance)
+    ObjectReference[] markers = Player.FindAllReferencesOfType(BountySpawnMarkers, maxSpawnDistance)
     ObjectReference[] foundMarkers = new ObjectReference[markers.Length]
 
     Int numFoundMarkers = 0
     int i = 0
     While i < markers.Length
         float distance = Player.GetDistance(markers[i])
-        If distance >= minDistance && distance <= maxDistance && markers[i].GetWorldspace() == thisWorldspace
-            If !Player.HasDetectionLOS(markers[i]) && !markers[i].HasDirectLOS(Player)
-                If markers[i].FindAllReferencesWithKeyword(BountySpawnerKeyword, minDistance).Length == 0
+        If distance >= minSpawnDistance && distance <= maxSpawnDistance && markers[i].GetWorldspace() == thisWorldspace
+            If !Player.HasDetectionLOS(markers[i]) && !markers[i].HasDirectLOS(Player, asTargetNode = "Head")
+                If markers[i].FindAllReferencesWithKeyword(BountySpawnerKeyword, minSpawnDistance).Length == 0
                     foundMarkers[numFoundMarkers] = markers[i]
                     numFoundMarkers += 1
                 EndIf
