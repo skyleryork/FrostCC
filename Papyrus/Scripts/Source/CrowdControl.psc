@@ -2,6 +2,7 @@
 ; Licensed under the MIT License. See LICENSE in the project root for license information.
 Scriptname CrowdControl extends ReferenceAlias
 
+
 Chance CH = None
 Misfortune:LoseItemScript LoseItemMisfortune = None
 Misfortune:ContaminationScript ContaminationMisfortune = None
@@ -86,15 +87,15 @@ Function InitVars()
 	Endif
 
     If LoseItemMisfortune == None
-        LoseItemMisfortune = GetOwningQuest().GetAlias(0) as Misfortune:LoseItemScript
+        LoseItemMisfortune = GetOwningQuest().GetAlias(16) as Misfortune:LoseItemScript
     EndIf
 
     If ContaminationMisfortune == None
-        ContaminationMisfortune = GetOwningQuest().GetAlias(0) as Misfortune:ContaminationScript
+        ContaminationMisfortune = GetOwningQuest().GetAlias(15) as Misfortune:ContaminationScript
     EndIf
 
     If RadiationHotspotMisfortune == None
-        RadiationHotspotMisfortune = GetOwningQuest().GetAlias(0) as Misfortune:RadiationHotspotScript
+        RadiationHotspotMisfortune = GetOwningQuest().GetAlias(14) as Misfortune:RadiationHotspotScript
     EndIf
 
     If BountyFeralGhouls == None
@@ -102,7 +103,7 @@ Function InitVars()
     EndIf
 
     If LootNPCWater == None
-        LootNPCWater = GetOwningQuest().GetAlias(0) as Loot:OnKillScript
+        LootNPCWater = GetOwningQuest().GetAlias(17) as Loot:OnKillScript
     EndIf
 EndFunction
 

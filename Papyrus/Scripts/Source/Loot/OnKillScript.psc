@@ -11,11 +11,9 @@ Message Property OnKillMessage Auto Const Mandatory
 Message Property OnKillPerkMessage Auto Const Mandatory
 
 String Property OnKillChanceConfig Auto Const Mandatory
-String Property OnKillDurationConfig Auto Const Mandatory
 
 
 RPGRuntimeScript Runtime = None
-Bool oneTimeInit = False
 
 
 Bool Function Add()
@@ -28,11 +26,9 @@ Event OnInit()
         Runtime = GetOwningQuest().GetAlias(0) as RPGRuntimeScript
     EndIf
 
-    If !oneTimeInit
-        oneTimeInit = True
-
+    If !Runtime.ContainsMisfortune(Self)
         RPGRuntimeScript:StaticData data = new RPGRuntimeScript:StaticData
-        data.source = Self
+        data.ref = Self
         data.timerInterval = 1.0
         data.type = Runtime.TypeKill
         data.staticChance = OnKillChance
@@ -40,23 +36,23 @@ Event OnInit()
         data.addedMessage = OnKillPerkMessage
         data.runMessage = OnKillMessage
         data.chanceConfig = OnKillChanceConfig
-        data.durationConfig = OnKillDurationConfig
         Runtime.RegisterMisfortune(data)
+
+        Debug.Trace("Loot:OnKillScript: registered")
     EndIf
 EndEvent
 
 
-Event RPGRuntimeScript.OnKilled(RPGRuntimeScript source, Var[] args)
-    Actor Player = args[0] as Actor
-    Actor Victim = args[1] as Actor
+Event RPGRuntimeScript.OnKilled(RPGRuntimeScript ref, Var[] args)
+    Actor victim = args[1] as Actor
 
-   If !OnKillRaces || OnKillRaces.HasForm(Victim.GetRace())
-        If !OnKillExcludeKeywords || !Victim.HasKeywordInFormList(OnKillExcludeKeywords)
-            Victim.AddItem(OnKillLoot)
-            source.OnApplyResult(Self, True)
+    If !OnKillRaces || OnKillRaces.HasForm(victim.GetRace())
+        If !OnKillExcludeKeywords || !victim.HasKeywordInFormList(OnKillExcludeKeywords)
+            victim.AddItem(OnKillLoot)
+            ref.OnApplyResult(Self, True)
             return
         EndIf
     EndIf
 
-    source.OnApplyResult(Self, False)
+    ref.OnApplyResult(Self, False)
 EndEvent

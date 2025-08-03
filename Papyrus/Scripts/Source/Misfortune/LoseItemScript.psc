@@ -16,7 +16,6 @@ String Property LoseItemDurationConfig Auto Const Mandatory
 
 
 RPGRuntimeScript Runtime = None
-Bool oneTimeInit = False
 
 
 Bool Function Add()
@@ -29,11 +28,9 @@ Event OnInit()
         Runtime = GetOwningQuest().GetAlias(0) as RPGRuntimeScript
     EndIf
 
-    If !oneTimeInit
-        oneTimeInit = True
-
+    If !Runtime.ContainsMisfortune(Self)
         RPGRuntimeScript:StaticData data = new RPGRuntimeScript:StaticData
-        data.source = Self
+        data.ref = Self
         data.timerInterval = 1.0
         data.type = Runtime.TypeSprinting
         data.staticChance = LoseItemChance
@@ -44,11 +41,13 @@ Event OnInit()
         data.chanceConfig = LoseItemChanceConfig
         data.durationConfig = LoseItemDurationConfig
         Runtime.RegisterMisfortune(data)
+
+        Debug.Trace("Misfortune:LoseItemScript: registered")
     EndIf
 EndEvent
 
 
-Event RPGRuntimeScript.OnSprinting(RPGRuntimeScript source, Var[] args)
+Event RPGRuntimeScript.OnSprinting(RPGRuntimeScript ref, Var[] args)
     Actor Player = args[0] as Actor
 
     FormList keywords = LoseItemKeywords
@@ -71,7 +70,7 @@ Event RPGRuntimeScript.OnSprinting(RPGRuntimeScript source, Var[] args)
     EndWhile
 
     If !item || index < 0
-        source.OnApplyResult(Self, False)
+        ref.OnApplyResult(Self, False)
         return
     EndIf
 
@@ -88,5 +87,5 @@ Event RPGRuntimeScript.OnSprinting(RPGRuntimeScript source, Var[] args)
         Player.CreateDetectionEvent(Player, detection)
     EndIf
 
-    source.OnApplyResult(Self, True)
+    ref.OnApplyResult(Self, True)
 EndEvent

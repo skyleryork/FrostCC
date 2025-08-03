@@ -16,7 +16,6 @@ String Property ContaminationDurationConfig Auto Const Mandatory
 
 
 RPGRuntimeScript Runtime = None
-Bool oneTimeInit = False
 
 
 Bool Function Add()
@@ -29,11 +28,9 @@ Event OnInit()
         Runtime = GetOwningQuest().GetAlias(0) as RPGRuntimeScript
     EndIf
 
-    If !oneTimeInit
-        oneTimeInit = True
-
+    If !Runtime.ContainsMisfortune(Self)
         RPGRuntimeScript:StaticData data = new RPGRuntimeScript:StaticData
-        data.source = Self
+        data.ref = Self
         data.timerInterval = 1.0
         data.type = Runtime.TypeRadiation
         data.staticChance = ContaminationChance
@@ -44,11 +41,13 @@ Event OnInit()
         data.chanceConfig = ContaminationChanceConfig
         data.durationConfig = ContaminationDurationConfig
         Runtime.RegisterMisfortune(data)
+
+        Debug.Trace("Misfortune:ContaminationScript: registered")
     EndIf
 EndEvent
 
 
-Event RPGRuntimeScript.OnRadiation(RPGRuntimeScript source, Var[] args)
+Event RPGRuntimeScript.OnRadiation(RPGRuntimeScript ref, Var[] args)
     Actor Player = args[0] as Actor
 
     Form[] allItems = Player.GetInventoryItems()
@@ -69,12 +68,12 @@ Event RPGRuntimeScript.OnRadiation(RPGRuntimeScript source, Var[] args)
     EndWhile
 
     If !item || !replaceItem
-        source.OnApplyResult(Self, False)
+        ref.OnApplyResult(Self, False)
         return
     EndIf
 
     Player.RemoveItem(item, abSilent = True)
     Player.AddItem(replaceItem, abSilent = True)
 
-    source.OnApplyResult(Self, True)
+    ref.OnApplyResult(Self, True)
 EndEvent

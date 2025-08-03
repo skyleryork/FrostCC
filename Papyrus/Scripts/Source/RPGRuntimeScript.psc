@@ -8,7 +8,7 @@ CustomEvent OnKilled
 
 
 Struct StaticData
-    ScriptObject source = None
+    ScriptObject ref = None
     Float timerInterval = 0.0
     Int type = -1
     Float staticChance = 0.0
@@ -37,15 +37,28 @@ Int Property TypeKill = 3 AutoReadOnly
 Actor Player = None
 StaticData[] theStaticData = None
 RuntimeData[] theRuntimeData = None
+Bool Locked = False
 Bool InRadiation = False
 
 
+Function Lock()
+    While Locked
+        Utility.Wait(0.2)
+    EndWhile
+    Locked = True
+EndFunction
+
+
+Function Unlock()
+    Locked = False
+EndFunction
+
+
 Function ParseSettings(StaticData thisStaticData, RuntimeData thisRuntimeData)
-    ; todo: ini file parsing
-    Float chanceSetting = thisStaticData.staticChance
+    Float chanceSetting = CrowdControlApi.GetFloatSetting("RPGRuntime", thisStaticData.chanceConfig, thisStaticData.staticChance)
 
     If thisStaticData.type != TypeKill
-        Float durationSetting = thisStaticData.staticDuration
+        Float durationSetting = CrowdControlApi.GetFloatSetting("RPGRuntime", thisStaticData.durationConfig, thisStaticData.staticDuration)
         thisRuntimeData.calculatedChance = Chance.CalculateTimescaledChance(chanceSetting, durationSetting, thisStaticData.timerInterval)
     Else
         thisRuntimeData.calculatedChance = chanceSetting
@@ -53,7 +66,23 @@ Function ParseSettings(StaticData thisStaticData, RuntimeData thisRuntimeData)
 EndFunction
 
 
+Bool Function ContainsMisfortune(ScriptObject ref)
+    If !theStaticData
+        return False
+    EndIf
+    Int i = 0
+    While i < theStaticData.Length
+        If theStaticData[i].ref == ref
+            return True
+        EndIf
+        i += 1
+    EndWhile
+    return False
+EndFunction
+
+
 Function RegisterMisfortune(StaticData thisStaticData)
+    Lock()
     If theStaticData == None
         theStaticData = new StaticData[1]
         theStaticData[0] = thisStaticData
@@ -82,46 +111,55 @@ Function RegisterMisfortune(StaticData thisStaticData)
         newData[i] = thisRuntimeData
         theRuntimeData = newData
     EndIf
+    Int timerId = theStaticData.Length
+    Unlock()
 
     ParseSettings(thisStaticData, thisRuntimeData)
 
     If thisStaticData.type == TypeInterval
-        thisStaticData.source.RegisterForCustomEvent(Self, "OnInterval")
+        thisStaticData.ref.RegisterForCustomEvent(Self, "OnInterval")
     ElseIf thisStaticData.type == TypeRadiation
-        thisStaticData.source.RegisterForCustomEvent(Self, "OnRadiation")
+        thisStaticData.ref.RegisterForCustomEvent(Self, "OnRadiation")
         RegisterForRadiationDamageEvent(Player)
     ElseIf thisStaticData.type == TypeSprinting
-        thisStaticData.source.RegisterForCustomEvent(Self, "OnSprinting")
+        thisStaticData.ref.RegisterForCustomEvent(Self, "OnSprinting")
     ElseIf thisStaticData.type == TypeKill
+        thisStaticData.ref.RegisterForCustomEvent(Self, "OnKilled")
         RegisterForRemoteEvent(Player, "OnKill")
     EndIf
 
-    StartTimer(Utility.RandomFloat(0.0, thisStaticData.timerInterval), theStaticData.Length)
+    StartTimer(Utility.RandomFloat(0.0, thisStaticData.timerInterval), timerId)
+EndFunction
+
+
+Function ShowMessageRank(Message theMessage, Int rank, Var[] args = None)
+    If !args || args.Length == 0
+        theMessage.Show(rank)
+    ElseIf args.Length >= 1
+        theMessage.Show(rank, args[0] as Float)
+    EndIf
 EndFunction
 
 
 Function ShowMessage(Message theMessage, Var[] args = None)
     If !args || args.Length == 0
         theMessage.Show()
-    ElseIf args.Length == 1
+    ElseIf args.Length >= 1
         theMessage.Show(args[0] as Float)
-    ElseIf args.Length == 2
-        theMessage.Show(args[0] as Float, args[1] as Float)
-    ElseIf args.Length == 3
-        theMessage.Show(args[0] as Float, args[1] as Float, args[2] as Float)
-    ElseIf args.Length >= 4
-        theMessage.Show(args[0] as Float, args[1] as Float, args[2] as Float, args[3] as Float)
     EndIf
 EndFunction
 
 
-Bool Function OnAdded(ScriptObject source, Var[] messageArgs = None)
+Bool Function OnAdded(ScriptObject ref, Var[] messageArgs = None)
+    If !theStaticData
+        return False
+    EndIf
     Int i = 0
     While i < theStaticData.Length
-        If theStaticData[i].source == source
+        If theStaticData[i].ref == ref
             If theRuntimeData[i].count < theStaticData[i].perks.GetSize()
                 theRuntimeData[i].count += 1
-                ShowMessage(theStaticData[i].addedMessage, messageArgs)
+                ShowMessageRank(theStaticData[i].addedMessage, theRuntimeData[i].count, messageArgs)
                 return True
             Else
                 return False
@@ -133,10 +171,13 @@ Bool Function OnAdded(ScriptObject source, Var[] messageArgs = None)
 EndFunction
 
 
-Function OnApplyResult(ScriptObject source, Bool success, Var[] messageArgs = None)
+Function OnApplyResult(ScriptObject ref, Bool success, Var[] messageArgs = None)
+    If !theStaticData
+        return
+    EndIf
     Int i = 0
     While i < theStaticData.Length
-        If theStaticData[i].source == source
+        If theStaticData[i].ref == ref
             If success
                 ShowMessage(theStaticData[i].runMessage, messageArgs)
             Else
@@ -176,6 +217,13 @@ Function UpdatePerks(FormList perks, Int count)
 EndFunction
 
 
+Event OnInit()
+    If Player == None
+        Player = Game.GetPlayer()
+    EndIf
+EndEvent
+
+
 Event OnPlayerLoadGame()
     If theStaticData && theRuntimeData
         Int i = 0
@@ -201,18 +249,22 @@ EndEvent
 
 
 Event Actor.OnKill(Actor akSender, Actor akVictim)
+    If !theStaticData
+        return
+    EndIf
     Int i = 0
     While i < theStaticData.Length
         If theStaticData[i].type == TypeKill
             If Roll(theRuntimeData[i].count, theRuntimeData[i].calculatedChance)
                 Var[] args = new Var[3]
-                args[0] = Player
+                args[0] = akSender
                 args[1] = akVictim
                 args[2] = theRuntimeData[i].count
                 theRuntimeData[i].count -= 1
                 SendCustomEvent("OnKilled", args)
             EndIf
         EndIf
+        i += 1
     EndWhile
 EndEvent
 
@@ -268,4 +320,6 @@ Event OnTimer(Int timerId)
     EndIf
 
     UpdatePerks(thisStaticData.perks, thisRuntimeData.count)
+
+    StartTimer(thisStaticData.timerInterval, timerId)
 EndEvent

@@ -16,7 +16,6 @@ String Property RadiationHotspotDurationConfig Auto Const Mandatory
 
 
 RPGRuntimeScript Runtime = None
-Bool oneTimeInit = False
 
 
 Bool Function Add()
@@ -29,11 +28,9 @@ Event OnInit()
         Runtime = GetOwningQuest().GetAlias(0) as RPGRuntimeScript
     EndIf
 
-    If !oneTimeInit
-        oneTimeInit = True
-
+    If !Runtime.ContainsMisfortune(Self)
         RPGRuntimeScript:StaticData data = new RPGRuntimeScript:StaticData
-        data.source = Self
+        data.ref = Self
         data.timerInterval = 1.0
         data.type = Runtime.TypeInterval
         data.staticChance = RadiationHotspotChance
@@ -44,11 +41,13 @@ Event OnInit()
         data.chanceConfig = RadiationHotspotChanceConfig
         data.durationConfig = RadiationHotspotChanceConfig
         Runtime.RegisterMisfortune(data)
+
+        Debug.Trace("Misfortune:RadiationHotspotScript: registered")
     EndIf
 EndEvent
 
 
-Event RPGRuntimeScript.OnInterval(RPGRuntimeScript source, Var[] args)
+Event RPGRuntimeScript.OnInterval(RPGRuntimeScript ref, Var[] args)
     Actor Player = args[0] as Actor
     Int index = (args[1] as Int) - 1
 
@@ -62,8 +61,8 @@ Event RPGRuntimeScript.OnInterval(RPGRuntimeScript source, Var[] args)
 
         Var[] resultArgs = new Var[1]
         resultArgs[0] = rads
-        source.OnApplyResult(Self, True, resultArgs)
+        ref.OnApplyResult(Self, True, resultArgs)
     Else
-        source.OnApplyResult(Self, False)
+        ref.OnApplyResult(Self, False)
     EndIf
 EndEvent
