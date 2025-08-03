@@ -12,7 +12,7 @@ Float Property MinSpawnDistance Auto Const Mandatory
 Float Property MaxSpawnDistance Auto Const Mandatory
 
 Form[] Property HostileSpawns Auto Const Mandatory
-SpawnActivatorScript:SpawnParams Property HostileParams Auto Const Mandatory
+Bounty:SpawnActivatorScript:SpawnParams Property HostileParams Auto Const Mandatory
 
 Activator Property HostileSpawnActivator Auto Const Mandatory
 Perk[] Property HostileSpawnPerks Auto Const Mandatory
@@ -117,7 +117,7 @@ EndFunction
 Function TrySpawn()
     Float minDistance = MinSpawnDistance
     Float maxDistance = MaxSpawnDistance
-    SpawnActivatorScript:SpawnParams params = HostileParams
+    Bounty:SpawnActivatorScript:SpawnParams params = HostileParams
 
     WorldSpace thisWorldspace = Player.GetWorldspace()
     ObjectReference[] markers = Player.FindAllReferencesOfType(HostileSpawnMarkers, maxDistance)
@@ -148,7 +148,7 @@ Function TrySpawn()
     Unlock()
 
     ObjectReference marker = foundMarkers[Utility.RandomInt(0, numFoundMarkers - 1)]
-    SpawnActivatorScript spawner = marker.PlaceAtMe(HostileSpawnActivator) as SpawnActivatorScript
+    Bounty:SpawnActivatorScript spawner = marker.PlaceAtMe(HostileSpawnActivator) as Bounty:SpawnActivatorScript
     spawner.AddKeyword(HostileSpawnerKeyword)
 
     Form[] spawns = HostileSpawns

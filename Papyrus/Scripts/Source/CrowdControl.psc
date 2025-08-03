@@ -3,9 +3,9 @@
 Scriptname CrowdControl extends ReferenceAlias
 
 Chance CH = None
-LoseItemMisfortuneScript LoseItemMisfortune = None
-ContaminationMisfortuneScript ContaminationMisfortune = None
-RadiationHotspotMisfortuneScript RadiationHotspotMisfortune = None
+Misfortune:LoseItemMisfortuneScript LoseItemMisfortune = None
+Misfortune:ContaminationMisfortuneScript ContaminationMisfortune = None
+Misfortune:RadiationHotspotMisfortuneScript RadiationHotspotMisfortune = None
 Bounty:BountyFeralGhoulsScript BountyFeralGhouls = None
 Loot:LootNPCCookedFoodScript LootNPCCookedFood = None
 Loot:LootNPCWaterScript LootNPCWater = None
@@ -87,15 +87,15 @@ Function InitVars()
 	Endif
 
     If LoseItemMisfortune == None
-        LoseItemMisfortune = GetOwningQuest().GetAlias(0) as LoseItemMisfortuneScript
+        LoseItemMisfortune = GetOwningQuest().GetAlias(0) as Misfortune:LoseItemMisfortuneScript
     EndIf
 
     If ContaminationMisfortune == None
-        ContaminationMisfortune = GetOwningQuest().GetAlias(0) as ContaminationMisfortuneScript
+        ContaminationMisfortune = GetOwningQuest().GetAlias(0) as Misfortune:ContaminationMisfortuneScript
     EndIf
 
     If RadiationHotspotMisfortune == None
-        RadiationHotspotMisfortune = GetOwningQuest().GetAlias(0) as RadiationHotspotMisfortuneScript
+        RadiationHotspotMisfortune = GetOwningQuest().GetAlias(0) as Misfortune:RadiationHotspotMisfortuneScript
     EndIf
 
     If BountyFeralGhouls == None

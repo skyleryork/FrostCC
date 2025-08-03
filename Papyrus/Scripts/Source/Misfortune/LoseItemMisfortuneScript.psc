@@ -1,23 +1,23 @@
-Scriptname ContaminationMisfortuneScript extends ReferenceAlias
+Scriptname Misfortune:LoseItemMisfortuneScript extends ReferenceAlias
 
 
 Int Property PumpTimerId = 1 AutoReadOnly
-Float Property PumpTimerInterval = 1 AutoReadOnly
+Float Property PumpTimerInterval = 0.5 AutoReadOnly
 
 
 Float Property MisfortuneChance Auto Const Mandatory
 Float Property MisfortuneDuration Auto Const Mandatory
+Perk[] Property LoseItemPerks Auto Const Mandatory
 
-Perk[] Property ContaminationPerks Auto Const Mandatory
-FormList Property Pristine Auto Const Mandatory
-FormList Property Contaminated Auto Const Mandatory
+FormList Property ItemKeywords Auto Const Mandatory
+FormList Property ItemSounds Auto Const Mandatory
+Int[] Property ItemDetection Auto Const Mandatory
 
-Message Property ContaminationMessage Auto Const Mandatory
-Message Property ContaminationPerkMessage Auto Const Mandatory
+Message Property LoseItemMessage Auto Const Mandatory
+Message Property LoseItemPerkMessage Auto Const Mandatory
 
 
 Actor Player = None
-Bool InRadiation = False
 Float ScaledMisfortuneChance = 0.0
 Bool Locked = False
 
@@ -38,11 +38,11 @@ EndFunction
 Bool Function Add()
     Lock()
     Int i = 0
-    While i < ContaminationPerks.Length
-        If !Player.HasPerk(ContaminationPerks[i])
-            Player.AddPerk(ContaminationPerks[i])
+    While i < LoseItemPerks.Length
+        If !Player.HasPerk(LoseItemPerks[i])
+            Player.AddPerk(LoseItemPerks[i])
             Unlock()
-            ContaminationPerkMessage.Show(i + 1)
+            LoseItemPerkMessage.Show(i + 1)
             return True
         EndIf
         i += 1
@@ -53,12 +53,12 @@ EndFunction
 
 
 Function ParseSettings()
-    Float chanceSetting = CrowdControlApi.GetFloatSetting("Misfortunes", "ContaminationChance", -1.0)
+    Float chanceSetting = CrowdControlApi.GetFloatSetting("Misfortunes", "LoseItemChance", -1.0)
     If chanceSetting < 0.0
         chanceSetting = MisfortuneChance
     EndIf
 
-    Float durationSetting = CrowdControlApi.GetFloatSetting("Misfortunes", "ContaminationDuration", -1.0)
+    Float durationSetting = CrowdControlApi.GetFloatSetting("Misfortunes", "LoseItemDuration", -1.0)
     If durationSetting < 0.0
         durationSetting = MisfortuneDuration
     EndIf
@@ -68,10 +68,10 @@ EndFunction
 
 
 Event OnInit()
-    Debug.Trace("ContaminationMisfortuneScript: OnInit")
+    Debug.Trace("LoseItemMisfortuneScript: OnInit")
 
-    If ContaminationPerks.Length == 0 || Pristine.GetSize() != Contaminated.GetSize()
-        Debug.Trace("ContaminationMisfortuneScript: ContaminationPerks empty or Pristine/Contaminated size mismatch")
+    If ( ItemKeywords.GetSize() != ItemSounds.GetSize() ) || ( ItemKeywords.GetSize() != ItemDetection.Length )
+        Debug.Trace("LoseItemMisfortuneScript: ItemKeywords/ItemSounds/ItemDetection mismatched lengths")
     EndIf
 
     If Player == None
@@ -80,7 +80,6 @@ Event OnInit()
 
     ParseSettings()
 
-    RegisterForRadiationDamageEvent(Player)
     StartTimer(Utility.RandomFloat(0.0, PumpTimerInterval), PumpTimerId)
 EndEvent
 
@@ -91,7 +90,7 @@ EndEvent
 
 
 Bool Function RollMisfortune()
-    If !Player.HasPerk(ContaminationPerks[0])
+    If !Player.HasPerk(LoseItemPerks[0])
         return False
     EndIf
     return Utility.RandomFloat() <= ScaledMisfortuneChance
@@ -99,10 +98,10 @@ EndFunction
 
 
 Perk Function HighestRankPerk()
-    Int i = ContaminationPerks.Length - 1
+    Int i = LoseItemPerks.Length - 1
     While i >= 0
-        If Player.HasPerk(ContaminationPerks[i])
-            return ContaminationPerks[i]
+        If Player.HasPerk(LoseItemPerks[i])
+            return LoseItemPerks[i]
         EndIf
         i -= 1
     EndWhile
@@ -111,52 +110,54 @@ EndFunction
 
 
 Function ApplyMisfortune()
+    FormList keywords = ItemKeywords
     Form[] allItems = Player.GetInventoryItems()
+    Int[] filtered = keywords.FindFormsByKeywords(allItems)
     Int[] indices = ChanceApi.ShuffledIndices(allItems.Length)
 
+    Int index = -1
     Form item = None
-    Form replaceItem = None
     Int i = 0
     While i < indices.Length
         Int j = indices[i]
-        Int k = Pristine.Find(allItems[j])
+        Int k = filtered[j]
         If k >= 0
+            index = k
             item = allItems[j]
-            replaceItem = Contaminated.GetAt(k)
             i = indices.Length
         EndIf
         i += 1
     EndWhile
 
-    If !item || !replaceItem
+    If !item || index < 0
         return
     EndIf
 
+    Sound loseSound = ItemSounds.GetAt(index) as Sound
+    Int detection = ItemDetection[index]
+
     Player.RemovePerk(HighestRankPerk())
-    Player.RemoveItem(item, abSilent = True)
-    Player.AddItem(replaceItem, abSilent = True)
-    ContaminationMessage.Show()
-EndFunction
+    Player.RemoveItem(item)
 
-
-Event OnRadiationDamage(ObjectReference akTarget, bool abIngested)
-    If !abIngested
-        InRadiation = True
+    If loseSound
+        loseSound.Play(Player)
     EndIf
-EndEvent
+
+    If detection
+        Player.CreateDetectionEvent(Player, detection)
+    EndIf
+EndFunction
 
 
 Event OnTimer(Int timerId)
     If timerId == PumpTimerId
-        If InRadiation
+        If Player.IsSprinting() || (Player.IsInPowerArmor() && Player.IsRunning())
             Lock()
             If RollMisfortune()
                 ApplyMisfortune()
             EndIf
             Unlock()
-            InRadiation = False
         EndIf
-        RegisterForRadiationDamageEvent(Player)
         StartTimer(PumpTimerInterval, PumpTimerId)
     EndIf
 EndEvent

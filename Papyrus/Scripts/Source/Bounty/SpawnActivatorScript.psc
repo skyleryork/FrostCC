@@ -1,4 +1,4 @@
-Scriptname SpawnActivatorScript extends ObjectReference
+Scriptname Bounty:SpawnActivatorScript extends ObjectReference
 
 
 Struct SpawnParams

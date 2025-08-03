@@ -1,4 +1,4 @@
-Scriptname RadiationHotspotMisfortuneScript extends ReferenceAlias
+Scriptname Misfortune:RadiationHotspotMisfortuneScript extends ReferenceAlias
 
 Int Property PumpTimerId = 1 AutoReadOnly
 Float Property PumpTimerInterval = 1 AutoReadOnly

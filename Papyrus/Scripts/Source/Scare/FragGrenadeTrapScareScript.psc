@@ -1,4 +1,4 @@
-Scriptname FragGrenadeTrapScareScript extends ActiveMagicEffect
+Scriptname Scare:FragGrenadeTrapScareScript extends ActiveMagicEffect
 
 
 Sound Property TrapSound Auto Const Mandatory

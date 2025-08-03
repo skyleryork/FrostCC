@@ -1,4 +1,4 @@
-Scriptname FragMineScare extends ObjectReference
+Scriptname Scare:FragMineScare extends ObjectReference
 
 Sound Property MineSound Auto Const
 Explosion Property MineExplosion Auto Const
