@@ -1,1 +1,0 @@
-Scriptname Loot:LootNPCCookedFoodScript extends Loot:LootOnKillBaseScript

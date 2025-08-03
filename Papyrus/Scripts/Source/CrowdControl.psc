@@ -3,12 +3,12 @@
 Scriptname CrowdControl extends ReferenceAlias
 
 Chance CH = None
-Misfortune:LoseItemMisfortuneScript LoseItemMisfortune = None
-Misfortune:ContaminationMisfortuneScript ContaminationMisfortune = None
-Misfortune:RadiationHotspotMisfortuneScript RadiationHotspotMisfortune = None
-Bounty:BountyFeralGhoulsScript BountyFeralGhouls = None
-Loot:LootNPCCookedFoodScript LootNPCCookedFood = None
-Loot:LootNPCWaterScript LootNPCWater = None
+Misfortune:LoseItemScript LoseItemMisfortune = None
+Misfortune:ContaminationScript ContaminationMisfortune = None
+Misfortune:RadiationHotspotScript RadiationHotspotMisfortune = None
+Bounty:HostileSpawnBaseScript BountyFeralGhouls = None
+Loot:LootOnKillBaseScript LootNPCCookedFood = None
+Loot:LootOnKillBaseScript LootNPCWater = None
 
 Int[] ItemDie = None
 Int[] ItemResults = None
@@ -87,27 +87,27 @@ Function InitVars()
 	Endif
 
     If LoseItemMisfortune == None
-        LoseItemMisfortune = GetOwningQuest().GetAlias(0) as Misfortune:LoseItemMisfortuneScript
+        LoseItemMisfortune = GetOwningQuest().GetAlias(0) as Misfortune:LoseItemScript
     EndIf
 
     If ContaminationMisfortune == None
-        ContaminationMisfortune = GetOwningQuest().GetAlias(0) as Misfortune:ContaminationMisfortuneScript
+        ContaminationMisfortune = GetOwningQuest().GetAlias(0) as Misfortune:ContaminationScript
     EndIf
 
     If RadiationHotspotMisfortune == None
-        RadiationHotspotMisfortune = GetOwningQuest().GetAlias(0) as Misfortune:RadiationHotspotMisfortuneScript
+        RadiationHotspotMisfortune = GetOwningQuest().GetAlias(0) as Misfortune:RadiationHotspotScript
     EndIf
 
     If BountyFeralGhouls == None
-        BountyFeralGhouls = GetOwningQuest().GetAlias(0) as Bounty:BountyFeralGhoulsScript
+        BountyFeralGhouls = GetOwningQuest().GetAlias(0) as Bounty:HostileSpawnBaseScript
     EndIf
 
     If LootNPCCookedFood == None
-        LootNPCCookedFood = GetOwningQuest().GetAlias(0) as Loot:LootNPCCookedFoodScript
+        LootNPCCookedFood = GetOwningQuest().GetAlias(0) as Loot:LootOnKillBaseScript
     EndIf
 
     If LootNPCWater == None
-        LootNPCWater = GetOwningQuest().GetAlias(0) as Loot:LootNPCWaterScript
+        LootNPCWater = GetOwningQuest().GetAlias(0) as Loot:LootOnKillBaseScript
     EndIf
 EndFunction
 

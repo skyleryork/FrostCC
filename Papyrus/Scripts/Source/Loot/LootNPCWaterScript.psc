@@ -1,1 +1,0 @@
-Scriptname Loot:LootNPCWaterScript extends Loot:LootOnKillBaseScript
