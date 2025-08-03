@@ -15,7 +15,10 @@ SET ArchiveSource="%CrowdControlPath%archive.source"
 SET ArchiveOutput="%FalloutPath%\Data\CrowdControl - Main.ba2"
 SET PexPath=%CrowdControlPath%Scripts
 SET PexFragmentsPath="%PexPath%\Fragments\Quests"
+SET PexBountyPath="%PexPath%\Bounty"
 SET PexLootPath="%PexPath%\Loot"
+SET PexMisfortunePath="%PexPath%\Misfortune"
+SET PexScarePath="%PexPath%\Scare"
 SET PscPath="%PexPath%\Source"
 SET PscFragmentsPath="%PexPath%\Source\Fragments\Quests"
 SET PscBountyPath="%PexPath%\Source\Bounty"
@@ -65,7 +68,16 @@ for %%F in ("%PexPath%\*.pex") do (
 for %%F in ("%PexFragmentsPath%\*.pex") do (
     echo %%F >> "%CrowdControlPath%archive.source"
 )
+for %%F in ("%PexBountyPath%\*.pex") do (
+    echo %%F >> "%CrowdControlPath%archive.source"
+)
 for %%F in ("%PexLootPath%\*.pex") do (
+    echo %%F >> "%CrowdControlPath%archive.source"
+)
+for %%F in ("%PexMisfortunePath%\*.pex") do (
+    echo %%F >> "%CrowdControlPath%archive.source"
+)
+for %%F in ("%PexScarePath%\*.pex") do (
     echo %%F >> "%CrowdControlPath%archive.source"
 )
 
