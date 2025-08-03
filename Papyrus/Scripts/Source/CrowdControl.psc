@@ -7,8 +7,7 @@ Misfortune:LoseItemScript LoseItemMisfortune = None
 Misfortune:ContaminationScript ContaminationMisfortune = None
 Misfortune:RadiationHotspotScript RadiationHotspotMisfortune = None
 Bounty:HostileSpawnBaseScript BountyFeralGhouls = None
-Loot:LootOnKillBaseScript LootNPCCookedFood = None
-Loot:LootOnKillBaseScript LootNPCWater = None
+Loot:OnKillScript LootNPCWater = None
 
 Int[] ItemDie = None
 Int[] ItemResults = None
@@ -102,12 +101,8 @@ Function InitVars()
         BountyFeralGhouls = GetOwningQuest().GetAlias(0) as Bounty:HostileSpawnBaseScript
     EndIf
 
-    If LootNPCCookedFood == None
-        LootNPCCookedFood = GetOwningQuest().GetAlias(0) as Loot:LootOnKillBaseScript
-    EndIf
-
     If LootNPCWater == None
-        LootNPCWater = GetOwningQuest().GetAlias(0) as Loot:LootOnKillBaseScript
+        LootNPCWater = GetOwningQuest().GetAlias(0) as Loot:OnKillScript
     EndIf
 EndFunction
 
@@ -544,16 +539,6 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
             PrintMessage(status)
         Else
             status = viewer + ", feral ghouls maxed"
-            Respond(id, 1, status)
-            PrintMessage(status)
-        EndIf
-
-    elseif command.command == "loot-npc-cookedfood"
-        If LootNPCCookedFood.Add()
-            Respond(id, 0, status)
-            PrintMessage(status)
-        Else
-            status = viewer + ", NPC cooked food maxed"
             Respond(id, 1, status)
             PrintMessage(status)
         EndIf

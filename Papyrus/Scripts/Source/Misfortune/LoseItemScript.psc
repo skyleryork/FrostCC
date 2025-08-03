@@ -4,7 +4,6 @@ Scriptname Misfortune:LoseItemScript extends ReferenceAlias
 Float Property LoseItemChance Auto Const Mandatory
 Float Property LoseItemDuration Auto Const Mandatory
 
-
 FormList Property LoseItemKeywords Auto Const Mandatory
 FormList Property LoseItemSounds Auto Const Mandatory
 Int[] Property LoseItemDetection Auto Const Mandatory

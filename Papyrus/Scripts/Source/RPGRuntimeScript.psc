@@ -205,9 +205,10 @@ Event Actor.OnKill(Actor akSender, Actor akVictim)
     While i < theStaticData.Length
         If theStaticData[i].type == TypeKill
             If Roll(theRuntimeData[i].count, theRuntimeData[i].calculatedChance)
-                Var[] args = new Var[2]
+                Var[] args = new Var[3]
                 args[0] = Player
-                args[1] = theRuntimeData[i].count
+                args[1] = akVictim
+                args[2] = theRuntimeData[i].count
                 theRuntimeData[i].count -= 1
                 SendCustomEvent("OnKilled", args)
             EndIf

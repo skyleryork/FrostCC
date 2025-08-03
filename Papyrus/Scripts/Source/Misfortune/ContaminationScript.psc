@@ -1,7 +1,8 @@
 Scriptname Misfortune:ContaminationScript extends ReferenceAlias
 
-Float Property ContamiationChance Auto Const Mandatory
-Float Property ContamiationDuration Auto Const Mandatory
+
+Float Property ContaminationChance Auto Const Mandatory
+Float Property ContaminationDuration Auto Const Mandatory
 
 FormList Property ContaminationPerks Auto Const Mandatory
 FormList Property ContaminationPristine Auto Const Mandatory
@@ -35,8 +36,8 @@ Event OnInit()
         data.source = Self
         data.timerInterval = 1.0
         data.type = Runtime.TypeRadiation
-        data.staticChance = ContamiationChance
-        data.staticDuration = ContamiationDuration
+        data.staticChance = ContaminationChance
+        data.staticDuration = ContaminationDuration
         data.perks = ContaminationPerks
         data.addedMessage = ContaminationPerkMessage
         data.runMessage = ContaminationMessage
