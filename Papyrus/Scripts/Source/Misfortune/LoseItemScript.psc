@@ -48,7 +48,11 @@ EndEvent
 
 
 Event RPGRuntimeScript.OnSprinting(RPGRuntimeScript ref, Var[] args)
-    Actor Player = args[0] as Actor
+    If (args[0] as ScriptObject) != Self
+        return
+    EndIf
+
+    Actor Player = args[1] as Actor
 
     FormList keywords = LoseItemKeywords
     Form[] allItems = Player.GetInventoryItems()

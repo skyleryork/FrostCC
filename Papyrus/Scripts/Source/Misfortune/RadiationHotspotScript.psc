@@ -48,8 +48,12 @@ EndEvent
 
 
 Event RPGRuntimeScript.OnInterval(RPGRuntimeScript ref, Var[] args)
-    Actor Player = args[0] as Actor
-    Int index = (args[1] as Int) - 1
+    If (args[0] as ScriptObject) != Self
+        return
+    EndIf
+
+    Actor Player = args[1] as Actor
+    Int index = (args[2] as Int) - 1
 
     Hazard hotspot = RadiationHotspots.GetAt(index) as Hazard
     Float spacing = RadiationHotspotSpacing[index]

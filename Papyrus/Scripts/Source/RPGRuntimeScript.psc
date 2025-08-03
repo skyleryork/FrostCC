@@ -28,10 +28,35 @@ Struct RuntimeData
 EndStruct
 
 
-Int Property TypeInterval = 0 AutoReadOnly
-Int Property TypeRadiation = 1 AutoReadOnly
-Int Property TypeSprinting = 2 AutoReadOnly
-Int Property TypeKill = 3 AutoReadOnly
+Int TypeIntervalValue = 0 Const
+Int TypeRadiationValue = 1 Const
+Int TypeSprintingValue = 2 Const
+Int TypeKillValue = 3 Const
+
+
+Int Property TypeInterval
+  Int Function get()
+    return TypeIntervalValue
+  EndFunction
+EndProperty
+
+Int Property TypeRadiation
+  Int Function get()
+    return TypeRadiationValue
+  EndFunction
+EndProperty
+
+Int Property TypeSprinting
+  Int Function get()
+    return TypeSprintingValue
+  EndFunction
+EndProperty
+
+Int Property TypeKill
+  Int Function get()
+    return TypeKillValue
+  EndFunction
+EndProperty
 
 
 Actor Player = None
@@ -57,7 +82,7 @@ EndFunction
 Function ParseSettings(StaticData thisStaticData, RuntimeData thisRuntimeData)
     Float chanceSetting = CrowdControlApi.GetFloatSetting("RPGRuntime", thisStaticData.chanceConfig, thisStaticData.staticChance)
 
-    If thisStaticData.type != TypeKill
+    If thisStaticData.type != TypeKillValue
         Float durationSetting = CrowdControlApi.GetFloatSetting("RPGRuntime", thisStaticData.durationConfig, thisStaticData.staticDuration)
         thisRuntimeData.calculatedChance = Chance.CalculateTimescaledChance(chanceSetting, durationSetting, thisStaticData.timerInterval)
     Else
@@ -116,14 +141,14 @@ Function RegisterMisfortune(StaticData thisStaticData)
 
     ParseSettings(thisStaticData, thisRuntimeData)
 
-    If thisStaticData.type == TypeInterval
+    If thisStaticData.type == TypeIntervalValue
         thisStaticData.ref.RegisterForCustomEvent(Self, "OnInterval")
-    ElseIf thisStaticData.type == TypeRadiation
+    ElseIf thisStaticData.type == TypeRadiationValue
         thisStaticData.ref.RegisterForCustomEvent(Self, "OnRadiation")
         RegisterForRadiationDamageEvent(Player)
-    ElseIf thisStaticData.type == TypeSprinting
+    ElseIf thisStaticData.type == TypeSprintingValue
         thisStaticData.ref.RegisterForCustomEvent(Self, "OnSprinting")
-    ElseIf thisStaticData.type == TypeKill
+    ElseIf thisStaticData.type == TypeKillValue
         thisStaticData.ref.RegisterForCustomEvent(Self, "OnKilled")
         RegisterForRemoteEvent(Player, "OnKill")
     EndIf
@@ -239,7 +264,7 @@ Event OnRadiationDamage(ObjectReference akTarget, bool abIngested)
     If !abIngested
         Int i = 0
         While i < theStaticData.Length
-            If theStaticData[i].type == TypeRadiation
+            If theStaticData[i].type == TypeRadiationValue
                 theRuntimeData[i].inRadiation = True
             EndIf
             i += 1
@@ -254,12 +279,13 @@ Event Actor.OnKill(Actor akSender, Actor akVictim)
     EndIf
     Int i = 0
     While i < theStaticData.Length
-        If theStaticData[i].type == TypeKill
+        If theStaticData[i].type == TypeKillValue
             If Roll(theRuntimeData[i].count, theRuntimeData[i].calculatedChance)
                 Var[] args = new Var[3]
-                args[0] = akSender
-                args[1] = akVictim
-                args[2] = theRuntimeData[i].count
+                args[0] = theStaticData[i].ref
+                args[1] = akSender
+                args[2] = akVictim
+                args[3] = theRuntimeData[i].count
                 theRuntimeData[i].count -= 1
                 SendCustomEvent("OnKilled", args)
             EndIf
@@ -277,15 +303,15 @@ Event OnTimer(Int timerId)
     String eventName = ""
     Var[] extraArgs = None
 
-    If thisStaticData.type == TypeInterval
+    If thisStaticData.type == TypeIntervalValue
         tryRoll = True
-    ElseIf thisStaticData.type == TypeRadiation
+    ElseIf thisStaticData.type == TypeRadiationValue
         If thisRuntimeData.inRadiation
             tryRoll = True
             thisRuntimeData.inRadiation = False
             RegisterForRadiationDamageEvent(Player)
         EndIf
-    ElseIf thisStaticData.type == TypeSprinting
+    ElseIf thisStaticData.type == TypeSprintingValue
         If Player.IsSprinting() || (Player.IsInPowerArmor() && Player.IsRunning())
             tryRoll = True
         EndIf
@@ -299,8 +325,9 @@ Event OnTimer(Int timerId)
             Else
                 args = new Var[2]
             EndIf
-            args[0] = Player
-            args[1] = thisRuntimeData.count
+            args[0] = thisStaticData.ref
+            args[1] = Player
+            args[2] = thisRuntimeData.count
             If extraArgs
                 Int i = 0
                 While i < extraArgs.Length
@@ -309,11 +336,11 @@ Event OnTimer(Int timerId)
                 EndWhile
             EndIf
             thisRuntimeData.count -= 1
-            If thisStaticData.type == TypeInterval
+            If thisStaticData.type == TypeIntervalValue
                 SendCustomEvent("OnInterval", args)
-            ElseIf thisStaticData.type == TypeRadiation
+            ElseIf thisStaticData.type == TypeRadiationValue
                 SendCustomEvent("OnRadiation", args)
-            ElseIf thisStaticData.type == TypeSprinting
+            ElseIf thisStaticData.type == TypeSprintingValue
                 SendCustomEvent("OnSprinting", args)
             EndIf
         EndIf

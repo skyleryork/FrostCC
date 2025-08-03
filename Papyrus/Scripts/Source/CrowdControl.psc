@@ -7,7 +7,7 @@ Chance CH = None
 Misfortune:LoseItemScript LoseItemMisfortune = None
 Misfortune:ContaminationScript ContaminationMisfortune = None
 Misfortune:RadiationHotspotScript RadiationHotspotMisfortune = None
-Bounty:HostileSpawnBaseScript BountyFeralGhouls = None
+Bounty:BountyScript BountyFeralGhouls = None
 Loot:OnKillScript LootNPCWater = None
 
 Int[] ItemDie = None
@@ -99,7 +99,7 @@ Function InitVars()
     EndIf
 
     If BountyFeralGhouls == None
-        BountyFeralGhouls = GetOwningQuest().GetAlias(0) as Bounty:HostileSpawnBaseScript
+        BountyFeralGhouls = GetOwningQuest().GetAlias(18) as Bounty:BountyScript
     EndIf
 
     If LootNPCWater == None

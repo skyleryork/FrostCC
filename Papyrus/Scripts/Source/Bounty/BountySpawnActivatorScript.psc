@@ -1,7 +1,7 @@
-Scriptname Bounty:SpawnActivatorScript extends ObjectReference
+Scriptname Bounty:BountySpawnActivatorScript extends ObjectReference
 
 
-Struct SpawnParams
+Struct BountyParams
     Int minQuantity
     Int maxQuantity
     Float spawnRadius
@@ -13,13 +13,14 @@ EndStruct
 Faction Property PlayerEnemyFaction Auto Const Mandatory
 Container Property SpawnLootContainer Auto Const Mandatory
 
+
 ObjectReference[] Spawns = None
 ObjectReference LootContainer = None
 Int[] LootDistribution = None
 Form[] LootItems = None
 
 
-Function Init(Form[] toSpawn, SpawnParams params)
+Function Init(Form[] toSpawn, BountyParams params)
     ;Debug.Trace("SpawnActivatorScript Init")
     Spawns = new ObjectReference[toSpawn.Length]
     Int i = 0
@@ -102,10 +103,10 @@ EndFunction
 Function HandleSpawnDeath(ObjectReference spawn)
     Int spawnIndex = Spawns.Find(spawn)
     If spawnIndex < 0
-        Debug.Trace("SpawnActivatorScript::HandleSpawnDeath - unknown spawn!")
+        Debug.Trace("BountSpawnActivatorScript::HandleSpawnDeath - unknown spawn!")
         return
     ElseIf !Spawns[spawnIndex]
-        Debug.Trace("SpawnActivatorScript::HandleSpawnDeath - repeat spawn!")
+        Debug.Trace("BountSpawnActivatorScript::HandleSpawnDeath - repeat spawn!")
         return
     EndIf
 
