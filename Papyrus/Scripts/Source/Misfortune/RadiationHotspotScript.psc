@@ -4,7 +4,7 @@ Scriptname Misfortune:RadiationHotspotScript extends ReferenceAlias
 Float Property RadiationHotspotChance Auto Const Mandatory
 Float Property RadiationHotspotDuration Auto Const Mandatory
 
-FormList Property RadiationHotspots Auto Const Mandatory
+Activator Property RadiationHotspotActivator Auto Const Mandatory
 Float[] Property RadiationHotspotSpacing Auto Const Mandatory
 Int[] Property RadiationHotspotRads Auto Const Mandatory
 
@@ -55,13 +55,14 @@ Event RPGRuntimeScript.OnInterval(RPGRuntimeScript ref, Var[] args)
     Actor Player = args[1] as Actor
     Int index = (args[2] as Int) - 1
 
-    Hazard hotspot = RadiationHotspots.GetAt(index) as Hazard
     Float spacing = RadiationHotspotSpacing[index]
     Int rads = RadiationHotspotRads[index]
 
-    ObjectReference[] hotspots = Player.FindAllReferencesOfType(hotspot, spacing)
+    ObjectReference[] hotspots = Player.FindAllReferencesOfType(RadiationHotspotActivator, spacing)
     If hotspots.Length == 0
-        Player.PlaceAtMe(hotspot)
+        Misfortune:RadiationHotspotActivatorScript hotspot = Player.PlaceAtMe(RadiationHotspotActivator) as Misfortune:RadiationHotspotActivatorScript
+
+        hotspot.Init(rads, 0.05, 1.0)
 
         Var[] resultArgs = new Var[1]
         resultArgs[0] = rads
