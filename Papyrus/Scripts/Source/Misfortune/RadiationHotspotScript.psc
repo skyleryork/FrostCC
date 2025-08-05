@@ -1,12 +1,19 @@
 Scriptname Misfortune:RadiationHotspotScript extends ReferenceAlias
 
 
+Struct RadiationHotspot
+    Int radiation
+    Float spacing
+    Float decayDays
+EndStruct
+
+
 Float Property RadiationHotspotChance Auto Const Mandatory
 Float Property RadiationHotspotDuration Auto Const Mandatory
 
 Activator Property RadiationHotspotActivator Auto Const Mandatory
-Float[] Property RadiationHotspotSpacing Auto Const Mandatory
-Int[] Property RadiationHotspotRads Auto Const Mandatory
+RadiationHotspot[] Property RadiationHotspots Auto Const Mandatory
+Float Property RadiationHotspotDecayScale Auto Const Mandatory
 
 FormList Property RadiationHotspotPerks Auto Const Mandatory
 Message Property RadiationHotspotPerkMessage Auto Const Mandatory
@@ -15,7 +22,7 @@ String Property RadiationHotspotChanceConfig Auto Const Mandatory
 String Property RadiationHotspotDurationConfig Auto Const Mandatory
 
 
-RPGRuntimeScript Runtime = None
+Runtime:RPGScript Runtime = None
 
 
 Bool Function Add()
@@ -25,11 +32,11 @@ EndFunction
 
 Event OnInit()
     If Runtime == None
-        Runtime = GetOwningQuest().GetAlias(0) as RPGRuntimeScript
+        Runtime = GetOwningQuest().GetAlias(0) as Runtime:RPGScript
     EndIf
 
     If !Runtime.ContainsMisfortune(Self)
-        RPGRuntimeScript:StaticData data = new RPGRuntimeScript:StaticData
+        Runtime:RPGScript:StaticData data = new Runtime:RPGScript:StaticData
         data.ref = Self
         data.timerInterval = 1.0
         data.type = Runtime.TypeInterval
@@ -47,25 +54,23 @@ Event OnInit()
 EndEvent
 
 
-Event RPGRuntimeScript.OnInterval(RPGRuntimeScript ref, Var[] args)
-    If (args[0] as ScriptObject) != Self
+Event Runtime:RPGScript.OnInterval(Runtime:RPGScript ref, Var[] args)
+    If !Runtime:RPGScript.ShouldHandleEvent(Self, args)
         return
     EndIf
 
     Actor Player = args[1] as Actor
     Int index = (args[2] as Int) - 1
 
-    Float spacing = RadiationHotspotSpacing[index]
-    Int rads = RadiationHotspotRads[index]
-
-    ObjectReference[] hotspots = Player.FindAllReferencesOfType(RadiationHotspotActivator, spacing)
+    RadiationHotspot data = RadiationHotspots[index]
+    ObjectReference[] hotspots = Player.FindAllReferencesOfType(RadiationHotspotActivator, data.spacing)
     If hotspots.Length == 0
         Misfortune:RadiationHotspotActivatorScript hotspot = Player.PlaceAtMe(RadiationHotspotActivator) as Misfortune:RadiationHotspotActivatorScript
 
-        hotspot.Init(rads, 0.05, 1.0)
+        hotspot.Init(data.radiation, RadiationHotspotDecayScale, data.decayDays)
 
         Var[] resultArgs = new Var[1]
-        resultArgs[0] = rads
+        resultArgs[0] = data.radiation
         ref.OnApplyResult(Self, True, resultArgs)
     Else
         ref.OnApplyResult(Self, False)

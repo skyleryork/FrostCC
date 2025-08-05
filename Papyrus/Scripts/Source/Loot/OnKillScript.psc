@@ -4,8 +4,8 @@ Scriptname Loot:OnKillScript extends OnKillBaseScript
 Form Property OnKillLoot Auto Const Mandatory
 
 
-Event RPGRuntimeScript.OnKilled(RPGRuntimeScript ref, Var[] args)
-    If (args[0] as ScriptObject) != Self
+Event Runtime:RPGScript.OnKilled(Runtime:RPGScript ref, Var[] args)
+    If !Runtime:RPGScript.ShouldHandleEvent(Self, args)
         return
     EndIf
 

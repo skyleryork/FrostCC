@@ -9,7 +9,7 @@ Message Property OnKillPerkMessage Auto Const Mandatory
 String Property OnKillChanceConfig Auto Const Mandatory
 
 
-RPGRuntimeScript Runtime = None
+Runtime:RPGScript Runtime = None
 
 
 Bool Function Add()
@@ -19,11 +19,11 @@ EndFunction
 
 Event OnInit()
     If Runtime == None
-        Runtime = GetOwningQuest().GetAlias(0) as RPGRuntimeScript
+        Runtime = GetOwningQuest().GetAlias(0) as Runtime:RPGScript
     EndIf
 
     If !Runtime.ContainsMisfortune(Self)
-        RPGRuntimeScript:StaticData data = new RPGRuntimeScript:StaticData
+        Runtime:RPGScript:StaticData data = new Runtime:RPGScript:StaticData
         data.ref = Self
         data.timerInterval = 1.0
         data.type = Runtime.TypeKill

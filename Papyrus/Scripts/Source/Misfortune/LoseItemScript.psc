@@ -15,7 +15,7 @@ String Property LoseItemChanceConfig Auto Const Mandatory
 String Property LoseItemDurationConfig Auto Const Mandatory
 
 
-RPGRuntimeScript Runtime = None
+Runtime:RPGScript Runtime = None
 
 
 Bool Function Add()
@@ -25,11 +25,11 @@ EndFunction
 
 Event OnInit()
     If Runtime == None
-        Runtime = GetOwningQuest().GetAlias(0) as RPGRuntimeScript
+        Runtime = GetOwningQuest().GetAlias(0) as Runtime:RPGScript
     EndIf
 
     If !Runtime.ContainsMisfortune(Self)
-        RPGRuntimeScript:StaticData data = new RPGRuntimeScript:StaticData
+        Runtime:RPGScript:StaticData data = new Runtime:RPGScript:StaticData
         data.ref = Self
         data.timerInterval = 1.0
         data.type = Runtime.TypeSprinting
@@ -47,8 +47,8 @@ Event OnInit()
 EndEvent
 
 
-Event RPGRuntimeScript.OnSprinting(RPGRuntimeScript ref, Var[] args)
-    If (args[0] as ScriptObject) != Self
+Event Runtime:RPGScript.OnSprinting(Runtime:RPGScript ref, Var[] args)
+    If !Runtime:RPGScript.ShouldHandleEvent(Self, args)
         return
     EndIf
 

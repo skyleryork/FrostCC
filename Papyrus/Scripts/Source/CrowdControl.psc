@@ -5,7 +5,7 @@ Scriptname CrowdControl extends ReferenceAlias
 
 Chance CH = None
 Misfortune:LoseItemScript LoseItemMisfortune = None
-Misfortune:ContaminationScript ContaminationMisfortune = None
+Misfortune:IrradiationScript IrradiationMisfortune = None
 Misfortune:RadiationHotspotScript RadiationHotspotMisfortune = None
 Bounty:BountyScript BountyFeralGhouls = None
 Loot:OnKillScript LootNPCWater = None
@@ -91,8 +91,8 @@ Function InitVars()
         LoseItemMisfortune = GetOwningQuest().GetAlias(16) as Misfortune:LoseItemScript
     EndIf
 
-    If ContaminationMisfortune == None
-        ContaminationMisfortune = GetOwningQuest().GetAlias(15) as Misfortune:ContaminationScript
+    If IrradiationMisfortune == None
+        IrradiationMisfortune = GetOwningQuest().GetAlias(15) as Misfortune:IrradiationScript
     EndIf
 
     If RadiationHotspotMisfortune == None
@@ -530,11 +530,11 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         EndIf
 
     elseif command.command == "misfortune-contamination"
-        If ContaminationMisfortune.Add()
+        If IrradiationMisfortune.Add()
             Respond(id, 0, status)
             PrintMessage(status)
         Else
-            status = viewer + ", contaminations maxed"
+            status = viewer + ", irradiations maxed"
             Respond(id, 1, status)
             PrintMessage(status)
         EndIf

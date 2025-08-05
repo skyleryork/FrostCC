@@ -24,7 +24,7 @@ String Property BountyMinSpawnDistanceConfig Auto Const Mandatory
 String Property BountyMaxSpawnDistanceConfig Auto Const Mandatory
 
 
-RPGRuntimeScript Runtime = None
+Runtime:RPGScript Runtime = None
 Float minSpawnDistance = 0.0
 Float maxSpawnDistance = 0.0
 
@@ -36,11 +36,11 @@ EndFunction
 
 Event OnInit()
     If Runtime == None
-        Runtime = GetOwningQuest().GetAlias(0) as RPGRuntimeScript
+        Runtime = GetOwningQuest().GetAlias(0) as Runtime:RPGScript
     EndIf
 
     If !Runtime.ContainsMisfortune(Self)
-        RPGRuntimeScript:StaticData data = new RPGRuntimeScript:StaticData
+        Runtime:RPGScript:StaticData data = new Runtime:RPGScript:StaticData
         data.ref = Self
         data.timerInterval = 1.0
         data.type = Runtime.TypeInterval
@@ -67,13 +67,13 @@ Function ParseSettings()
 EndFunction
 
 
-Event RPGRuntimeScript.OnParseSettings(RPGRuntimeScript ref, Var[] args)
+Event Runtime:RPGScript.OnParseSettings(Runtime:RPGScript ref, Var[] args)
     ParseSettings()
 EndEvent
 
 
-Event RPGRuntimeScript.OnInterval(RPGRuntimeScript ref, Var[] args)
-    If (args[0] as ScriptObject) != Self
+Event Runtime:RPGScript.OnInterval(Runtime:RPGScript ref, Var[] args)
+    If !Runtime:RPGScript.ShouldHandleEvent(Self, args)
         return
     EndIf
 

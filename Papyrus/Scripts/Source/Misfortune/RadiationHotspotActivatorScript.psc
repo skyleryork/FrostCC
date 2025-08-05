@@ -5,8 +5,10 @@ Int MaxRadiationHazardBits = 4
 
 
 FormList Property RadiationHazards Auto Const Mandatory
+Float Property RadiationUpdateInterval Auto Const Mandatory
 
 
+Int maxRads = 0
 ObjectReference[] hotspots = None
 Int startRads = 0
 Float finalScale = 0.0
@@ -53,32 +55,37 @@ Bool Function Init(Int initialRads, Float decayScale, Float decayDays)
         return False
     EndIf
 
-    If initialRads >= (Math.Pow(2.0, MaxRadiationHazardBits) As Int)
-        return False
-    EndIf
-
-    hotspots = new ObjectReference[MaxRadiationHazardBits]
-    Int i = 0
-    While i < hotspots.Length
-        hotspots[i] = Self.PlaceAtMe(RadiationHazards.GetAt(i), abInitiallyDisabled = True)
-        i += 1
-    EndWhile
-
-    startRads = initialRads
+    startRads = Math.Min(initialRads, maxRads) as Int
     finalScale = decayScale
     startHour = Utility.GetCurrentGameTime()
     finalHour = startHour + decayDays
 
     If UpdateHotspots()
-        StartTimer(5.0, 1)
+        StartTimer(RadiationUpdateInterval, 1)
     EndIf
 
     return True
 EndFunction
 
 
+Event OnInit()
+    If maxRads == 0
+        maxRads = (Math.Pow(2.0, MaxRadiationHazardBits) As Int) - 1
+    EndIf
+
+    If hotspots == None
+        hotspots = new ObjectReference[MaxRadiationHazardBits]
+        Int i = 0
+        While i < hotspots.Length
+            hotspots[i] = Self.PlaceAtMe(RadiationHazards.GetAt(i), abInitiallyDisabled = True)
+            i += 1
+        EndWhile
+    EndIf
+EndEvent
+
+
 Event OnTimer(int timerId)
     If UpdateHotspots()
-        StartTimer(5.0, 1)
+        StartTimer(RadiationUpdateInterval, 1)
     EndIf
 EndEvent
