@@ -145,6 +145,12 @@ namespace CrowdControl.Games.Packs.Fallout4_Frost
 
 			#endregion
 
+			#region Sanity
+
+			new Effect("Temporary Insanity", $"sanity__temporaryinsanity") { Price = GetPrice(25), Category = "Sanity" },
+
+			#endregion
+
 			#region TEST
 
 			new Effect("TEST", $"test") { Price = GetPrice(1), Category = "TEST" },

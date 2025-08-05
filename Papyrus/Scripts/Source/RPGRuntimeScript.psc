@@ -1,6 +1,14 @@
 Scriptname RPGRuntimeScript extends ReferenceAlias
 
 
+Perk Property aaSanityPerkInsane Auto Const Mandatory
+Perk Property TemporaryInsanityPerk Auto Const Mandatory
+ActorValue Property aaSanity Auto Mandatory
+ActorValue Property TemporaryInsanity Auto Mandatory
+Message Property aaInsaneWarning_Message Auto Const Mandatory
+Message Property aaSaneWarning_Message Auto Const Mandatory
+
+
 CustomEvent OnParseSettings
 CustomEvent OnInterval
 CustomEvent OnRadiation
@@ -19,6 +27,7 @@ Struct StaticData
     Message runMessage = None
     String chanceConfig = ""
     String durationConfig = ""
+    Bool handleParseSettings = False
 EndStruct
 
 
@@ -33,6 +42,11 @@ Int TypeIntervalValue = 0 Const
 Int TypeRadiationValue = 1 Const
 Int TypeSprintingValue = 2 Const
 Int TypeKillValue = 3 Const
+
+Int IntervalTimerIdStart = 256 Const
+
+Int SanityTimerId = 1 Const
+Float SanityTimerInterval = 1.0 Const
 
 
 Int Property TypeInterval
@@ -137,11 +151,14 @@ Function RegisterMisfortune(StaticData thisStaticData)
         newData[i] = thisRuntimeData
         theRuntimeData = newData
     EndIf
-    Int timerId = theStaticData.Length
+    Int timerId = theStaticData.Length - 1
     Unlock()
 
     ParseSettings(thisStaticData, thisRuntimeData)
-    thisStaticData.ref.RegisterForCustomEvent(Self, "OnParseSettings")
+
+    If thisStaticData.handleParseSettings
+        thisStaticData.ref.RegisterForCustomEvent(Self, "OnParseSettings")
+    EndIf
 
     If thisStaticData.type == TypeIntervalValue
         thisStaticData.ref.RegisterForCustomEvent(Self, "OnInterval")
@@ -155,7 +172,7 @@ Function RegisterMisfortune(StaticData thisStaticData)
         RegisterForRemoteEvent(Player, "OnKill")
     EndIf
 
-    StartTimer(Utility.RandomFloat(0.0, thisStaticData.timerInterval), timerId)
+    StartTimer(Utility.RandomFloat(0.0, thisStaticData.timerInterval), IntervalTimerIdStart + timerId)
 EndFunction
 
 
@@ -206,7 +223,9 @@ Function OnApplyResult(ScriptObject ref, Bool success, Var[] messageArgs = None)
     While i < theStaticData.Length
         If theStaticData[i].ref == ref
             If success
-                ShowMessage(theStaticData[i].runMessage, messageArgs)
+                If theStaticData[i].runMessage
+                    ShowMessage(theStaticData[i].runMessage, messageArgs)
+                EndIf
             Else
                 theRuntimeData[i].count += 1
             EndIf
@@ -227,7 +246,8 @@ EndFunction
 
 Function UpdatePerks(FormList perks, Int count)
     Int i = 0
-    While i < count
+    Int clampedCount = Math.Min(count, perks.GetSize()) as Int
+    While i < clampedCount
         Perk thePerk = perks.GetAt(i) as Perk
         If !Player.HasPerk(thePerk)
             Player.AddPerk(thePerk)
@@ -248,6 +268,8 @@ Event OnInit()
     If Player == None
         Player = Game.GetPlayer()
     EndIf
+
+    StartTimer(SanityTimerInterval, SanityTimerId)
 EndEvent
 
 
@@ -298,9 +320,49 @@ Event Actor.OnKill(Actor akSender, Actor akVictim)
 EndEvent
 
 
-Event OnTimer(Int timerId)
-    StaticData thisStaticData = theStaticData[timerId - 1]
-    RuntimeData thisRuntimeData = theRuntimeData[timerId - 1]
+Float Function HandleSystemTimer(Int timerId)
+    If timerId == SanityTimerId
+        Int currentSanityTier = 0
+        If Player.HasPerk(TemporaryInsanityPerk)
+            currentSanityTier = 2
+        ElseIf Player.HasPerk(aaSanityPerkInsane)
+            currentSanityTier = 1
+        EndIf
+
+        Int newSanityTier = 0
+        If Player.GetValue(TemporaryInsanity) <= 0
+            newSanityTier = 2
+        ElseIf Player.GetValue(aaSanity) <= 0
+            newSanityTier = 1
+        EndIf
+
+        If newSanityTier >= 1 && !Player.HasPerk(aaSanityPerkInsane)
+            Player.AddPerk(aaSanityPerkInsane, False)
+        ElseIf !newSanityTier && Player.HasPerk(aaSanityPerkInsane)
+            Player.RemovePerk(aaSanityPerkInsane)
+        EndIf
+
+        If newSanityTier >= 2 && !Player.HasPerk(TemporaryInsanityPerk)
+            Player.AddPerk(TemporaryInsanityPerk, False)
+        ElseIf !newSanityTier && Player.HasPerk(TemporaryInsanityPerk)
+            Player.RemovePerk(TemporaryInsanityPerk)
+        EndIf
+
+        If newSanityTier && !currentSanityTier
+            aaInsaneWarning_Message.Show()
+        ElseIf !newSanityTier && currentSanityTier
+            aaSaneWarning_Message.Show()
+        EndIf
+
+        return SanityTimerInterval
+    EndIf
+    return 0
+EndFunction
+
+
+Float Function HandleRPGTimer(Int timerId)
+    StaticData thisStaticData = theStaticData[timerId - IntervalTimerIdStart]
+    RuntimeData thisRuntimeData = theRuntimeData[timerId - IntervalTimerIdStart]
 
     Bool tryRoll = False
     String eventName = ""
@@ -351,5 +413,19 @@ Event OnTimer(Int timerId)
 
     UpdatePerks(thisStaticData.perks, thisRuntimeData.count)
 
-    StartTimer(thisStaticData.timerInterval, timerId)
+    return thisStaticData.timerInterval
+EndFunction
+
+
+Event OnTimer(Int timerId)
+    Float interval
+    If timerId < IntervalTimerIdStart
+        interval = HandleSystemTimer(timerId)
+    Else
+        interval = HandleRPGTimer(timerId)
+    EndIf
+
+    If interval
+        StartTimer(interval, timerId)
+    EndIf
 EndEvent

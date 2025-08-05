@@ -9,6 +9,7 @@ Misfortune:ContaminationScript ContaminationMisfortune = None
 Misfortune:RadiationHotspotScript RadiationHotspotMisfortune = None
 Bounty:BountyScript BountyFeralGhouls = None
 Loot:OnKillScript LootNPCWater = None
+Effect:OnKillSanityScript SanityTemporaryInsanity = None
 
 Int[] ItemDie = None
 Int[] ItemResults = None
@@ -104,6 +105,10 @@ Function InitVars()
 
     If LootNPCWater == None
         LootNPCWater = GetOwningQuest().GetAlias(17) as Loot:OnKillScript
+    EndIf
+
+    If SanityTemporaryInsanity == None
+        SanityTemporaryInsanity = GetOwningQuest().GetAlias(19) as Effect:OnKillSanityScript
     EndIf
 EndFunction
 
@@ -550,6 +555,16 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
             PrintMessage(status)
         Else
             status = viewer + ", NPC water maxed"
+            Respond(id, 1, status)
+            PrintMessage(status)
+        EndIf
+
+    elseif command.command == "sanity-temporaryinsanity"
+        If SanityTemporaryInsanity.Add()
+            Respond(id, 0, status)
+            PrintMessage(status)
+        Else
+            status = viewer + ", temporary insanity maxed"
             Respond(id, 1, status)
             PrintMessage(status)
         EndIf

@@ -15,12 +15,16 @@ SET ArchiveSource="%CrowdControlPath%archive.source"
 SET ArchiveOutput="%FalloutPath%\Data\CrowdControl - Main.ba2"
 SET PexPath=%CrowdControlPath%Scripts
 SET PexFragmentsPath="%PexPath%\Fragments\Quests"
+SET PexFrostPath="%PexPath%\Frost"
+SET PexEffectPath="%PexPath%\Effect"
 SET PexBountyPath="%PexPath%\Bounty"
 SET PexLootPath="%PexPath%\Loot"
 SET PexMisfortunePath="%PexPath%\Misfortune"
 SET PexScarePath="%PexPath%\Scare"
 SET PscPath="%PexPath%\Source"
 SET PscFragmentsPath="%PexPath%\Source\Fragments\Quests"
+SET PscFrostPath="%PexPath%\Source\Frost"
+SET PscEffectPath="%PexPath%\Source\Effect"
 SET PscBountyPath="%PexPath%\Source\Bounty"
 SET PscLootPath="%PexPath%\Source\Loot"
 SET PscMisfortunePath="%PexPath%\Source\Misfortune"
@@ -37,6 +41,12 @@ for %%F in ("%PscPath%\*.psc") do (
     start "" /B cmd /c PapyrusCompiler.exe "%%F" -f="Institute_Papyrus_Flags.flg" -i="%F4SEScriptSourcePath%;%PscPath%;%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%PexPath%" -op
 )
 for %%F in ("%PscFragmentsPath%\*.psc") do (
+    start "" /B cmd /c PapyrusCompiler.exe "%%F" -f="Institute_Papyrus_Flags.flg" -i="%F4SEScriptSourcePath%;%PscPath%;%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%PexPath%" -op
+)
+for %%F in ("%PscFrostPath%\*.psc") do (
+    start "" /B cmd /c PapyrusCompiler.exe "%%F" -f="Institute_Papyrus_Flags.flg" -i="%F4SEScriptSourcePath%;%PscPath%;%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%PexPath%" -op
+)
+for %%F in ("%PscEffectPath%\*.psc") do (
     start "" /B cmd /c PapyrusCompiler.exe "%%F" -f="Institute_Papyrus_Flags.flg" -i="%F4SEScriptSourcePath%;%PscPath%;%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%PexPath%" -op
 )
 for %%F in ("%PscBountyPath%\*.psc") do (
@@ -66,6 +76,12 @@ for %%F in ("%PexPath%\*.pex") do (
     echo %%F >> "%CrowdControlPath%archive.source"
 )
 for %%F in ("%PexFragmentsPath%\*.pex") do (
+    echo %%F >> "%CrowdControlPath%archive.source"
+)
+for %%F in ("%PexFrostPath%\*.pex") do (
+    echo %%F >> "%CrowdControlPath%archive.source"
+)
+for %%F in ("%PexEffectPath%\*.pex") do (
     echo %%F >> "%CrowdControlPath%archive.source"
 )
 for %%F in ("%PexBountyPath%\*.pex") do (

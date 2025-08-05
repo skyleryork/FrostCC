@@ -51,6 +51,7 @@ Event OnInit()
         data.runMessage = BountyMessage
         data.chanceConfig = BountyChanceConfig
         data.durationConfig = BountyDurationConfig
+        data.handleParseSettings = True
         Runtime.RegisterMisfortune(data)
 
         ParseSettings()
