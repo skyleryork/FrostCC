@@ -11,6 +11,7 @@ FormList Property IrradiationContaminated Auto Const Mandatory
 Message Property IrradiationMessage Auto Const Mandatory
 Message Property IrradiationPerkMessage Auto Const Mandatory
 
+String Property IrradiationCategoryConfig = "Misfortune" Auto Const
 String Property IrradiationChanceConfig Auto Const Mandatory
 String Property IrradiationDurationConfig Auto Const Mandatory
 
@@ -38,6 +39,7 @@ Event OnInit()
         data.perks = IrradiationPerks
         data.addedMessage = IrradiationPerkMessage
         data.runMessage = IrradiationMessage
+        data.categoryConfig = IrradiationCategoryConfig
         data.chanceConfig = IrradiationChanceConfig
         data.durationConfig = IrradiationDurationConfig
         Runtime.RegisterMisfortune(data)
@@ -47,14 +49,8 @@ Event OnInit()
 EndEvent
 
 
-Event Runtime:RPGScript.OnRadiation(Runtime:RPGScript ref, Var[] args)
-    If !Runtime:RPGScript.ShouldHandleEvent(Self, args)
-        return
-    EndIf
-
-    Actor Player = args[1] as Actor
-
-    Form[] allItems = Player.GetInventoryItems()
+Runtime:RPGScript:ApplyResult Function OnRadiation(Actor player, Int rank)
+    Form[] allItems = player.GetInventoryItems()
     Int[] indices = ChanceApi.ShuffledIndices(allItems.Length)
 
     Form item = None
@@ -72,12 +68,11 @@ Event Runtime:RPGScript.OnRadiation(Runtime:RPGScript ref, Var[] args)
     EndWhile
 
     If !item || !replaceItem
-        ref.OnApplyResult(Self, False)
-        return
+        return None
     EndIf
 
-    Player.RemoveItem(item, abSilent = True)
-    Player.AddItem(replaceItem, abSilent = True)
+    player.RemoveItem(item, abSilent = True)
+    player.AddItem(replaceItem, abSilent = True)
 
-    ref.OnApplyResult(Self, True)
-EndEvent
+    return new Runtime:RPGScript:ApplyResult
+EndFunction

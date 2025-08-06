@@ -18,6 +18,7 @@ FormList Property BountyPerks Auto Const Mandatory
 Message Property BountyMessage Auto Const Mandatory
 Message Property BountyPerkMessage Auto Const Mandatory
 
+String Property BountyCategoryConfig = "Bounty" Auto Const
 String Property BountyChanceConfig Auto Const Mandatory
 String Property BountyDurationConfig Auto Const Mandatory
 String Property BountyMinSpawnDistanceConfig Auto Const Mandatory
@@ -49,6 +50,7 @@ Event OnInit()
         data.perks = BountyPerks
         data.addedMessage = BountyPerkMessage
         data.runMessage = BountyMessage
+        data.categoryConfig = BountyCategoryConfig
         data.chanceConfig = BountyChanceConfig
         data.durationConfig = BountyDurationConfig
         data.handleParseSettings = True
@@ -62,8 +64,8 @@ EndEvent
 
 
 Function ParseSettings()
-    minSpawnDistance = CrowdControlApi.GetFloatSetting("RPGRuntime", BountyMinSpawnDistanceConfig, BountyMinSpawnDistance)
-    maxSpawnDistance = CrowdControlApi.GetFloatSetting("RPGRuntime", BountyMaxSpawnDistanceConfig, BountyMaxSpawnDistance)
+    minSpawnDistance = CrowdControlApi.GetFloatSetting(BountyCategoryConfig, BountyMinSpawnDistanceConfig, BountyMinSpawnDistance)
+    maxSpawnDistance = CrowdControlApi.GetFloatSetting(BountyCategoryConfig, BountyMaxSpawnDistanceConfig, BountyMaxSpawnDistance)
 EndFunction
 
 
@@ -72,18 +74,12 @@ Event Runtime:RPGScript.OnParseSettings(Runtime:RPGScript ref, Var[] args)
 EndEvent
 
 
-Event Runtime:RPGScript.OnInterval(Runtime:RPGScript ref, Var[] args)
-    If !Runtime:RPGScript.ShouldHandleEvent(Self, args)
-        return
-    EndIf
-
-    Actor Player = args[1] as Actor
+Runtime:RPGScript:ApplyResult Function OnInterval(Actor player, Int rank)
     Bounty:BountySpawnActivatorScript:BountyParams params = BountyParams
 
-    ObjectReference[] foundMarkers = SpawnUtils.FindSpawnMarkers(Player, BountySpawnMarkers, minSpawnDistance, maxSpawnDistance, BountySpawnerKeyword)
+    ObjectReference[] foundMarkers = SpawnUtils.FindSpawnMarkers(player, BountySpawnMarkers, minSpawnDistance, maxSpawnDistance, BountySpawnerKeyword)
     If foundMarkers.Length == 0
-        ref.OnApplyResult(Self, False)
-        return
+        return None
     EndIf
 
     ObjectReference marker = foundMarkers[Utility.RandomInt(0, foundMarkers.Length - 1)]
@@ -100,6 +96,5 @@ Event Runtime:RPGScript.OnInterval(Runtime:RPGScript ref, Var[] args)
     EndWhile
 
     spawner.Init(toSpawn, params)
-
-    ref.OnApplyResult(Self, True)
-EndEvent
+    return new Runtime:RPGScript:ApplyResult
+EndFunction

@@ -12,6 +12,7 @@ Loot:OnKillScript LootNPCWater = None
 Effect:OnKillSanityScript SanityTemporaryInsanity = None
 Swarm:SwarmScript SwarmFeralGhouls = None
 Swarm:SwarmScript SwarmPests = None
+Swarm:SwarmScript SwarmMaldenmen = None
 
 ReferenceAlias Property LoseItemMisfortuneAlias Auto Const Mandatory
 ReferenceAlias Property IrradiationMisfortuneAlias Auto Const Mandatory
@@ -21,6 +22,7 @@ ReferenceAlias Property LootNPCWaterAlias Auto Const Mandatory
 ReferenceAlias Property SanityTemporaryInsanityAlias Auto Const Mandatory
 ReferenceAlias Property SwarmFeralGhoulsAlias Auto Const Mandatory
 ReferenceAlias Property SwarmPestsAlias Auto Const Mandatory
+ReferenceAlias Property SwarmMaldenmenAlias Auto Const Mandatory
 
 
 Int[] ItemDie = None
@@ -114,6 +116,10 @@ Function InitVars()
 
     If SwarmPests == None
         SwarmPests = SwarmPestsAlias as Swarm:SwarmScript
+    EndIf
+
+    If SwarmMaldenmen == None
+        SwarmMaldenmen = SwarmMaldenmenAlias as Swarm:SwarmScript
     EndIf
 
     ; Get rid of Billy
@@ -605,6 +611,16 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
             PrintMessage(status)
         Else
             status = viewer + ", pest swarm maxed"
+            Respond(id, 1, status)
+            PrintMessage(status)
+        EndIf
+
+    elseif command.command == "swarm-maldenmen"
+        If SwarmMaldenmen.Add()
+            Respond(id, 0, status)
+            PrintMessage(status)
+        Else
+            status = viewer + ", Maldenmen swarm maxed"
             Respond(id, 1, status)
             PrintMessage(status)
         EndIf

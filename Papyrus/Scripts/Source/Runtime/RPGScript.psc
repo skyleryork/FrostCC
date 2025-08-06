@@ -5,10 +5,11 @@ GlobalVariable Property SwarmLastTime Auto Const Mandatory
 
 
 CustomEvent OnParseSettings
-CustomEvent OnInterval
-CustomEvent OnRadiation
-CustomEvent OnSprinting
-CustomEvent OnKilled
+
+
+Struct ApplyResult
+    Float param0 = 0.0
+EndStruct
 
 
 Struct StaticData
@@ -20,6 +21,7 @@ Struct StaticData
     FormList perks = None
     Message addedMessage = None
     Message runMessage = None
+    String categoryConfig = ""
     String chanceConfig = ""
     String durationConfig = ""
     Bool handleParseSettings = False
@@ -87,10 +89,10 @@ EndFunction
 
 
 Function ParseSettings(StaticData thisStaticData, RuntimeData thisRuntimeData)
-    Float chanceSetting = CrowdControlApi.GetFloatSetting("RPGRuntime", thisStaticData.chanceConfig, thisStaticData.staticChance)
+    Float chanceSetting = CrowdControlApi.GetFloatSetting(thisStaticData.categoryConfig, thisStaticData.chanceConfig, thisStaticData.staticChance)
 
     If thisStaticData.type != TypeKillValue
-        Float durationSetting = CrowdControlApi.GetFloatSetting("RPGRuntime", thisStaticData.durationConfig, thisStaticData.staticDuration)
+        Float durationSetting = CrowdControlApi.GetFloatSetting(thisStaticData.categoryConfig, thisStaticData.durationConfig, thisStaticData.staticDuration)
         thisRuntimeData.calculatedChance = Chance.CalculateTimescaledChance(chanceSetting, durationSetting, thisStaticData.timerInterval)
     Else
         thisRuntimeData.calculatedChance = chanceSetting
@@ -152,15 +154,9 @@ Function RegisterMisfortune(StaticData thisStaticData)
         thisStaticData.ref.RegisterForCustomEvent(Self, "OnParseSettings")
     EndIf
 
-    If thisStaticData.type == TypeIntervalValue
-        thisStaticData.ref.RegisterForCustomEvent(Self, "OnInterval")
-    ElseIf thisStaticData.type == TypeRadiationValue
-        thisStaticData.ref.RegisterForCustomEvent(Self, "OnRadiation")
+    If thisStaticData.type == TypeRadiationValue
         RegisterForRadiationDamageEvent(Player)
-    ElseIf thisStaticData.type == TypeSprintingValue
-        thisStaticData.ref.RegisterForCustomEvent(Self, "OnSprinting")
     ElseIf thisStaticData.type == TypeKillValue
-        thisStaticData.ref.RegisterForCustomEvent(Self, "OnKilled")
         RegisterForRemoteEvent(Player, "OnKill")
     EndIf
 
@@ -177,12 +173,8 @@ Function ShowMessageRank(Message theMessage, Int rank, Var[] args = None)
 EndFunction
 
 
-Function ShowMessage(Message theMessage, Var[] args = None)
-    If !args || args.Length == 0
-        theMessage.Show()
-    ElseIf args.Length >= 1
-        theMessage.Show(args[0] as Float)
-    EndIf
+Function ShowMessage(Message theMessage, ApplyResult result)
+    theMessage.Show(result.param0)
 EndFunction
 
 
@@ -196,11 +188,6 @@ Bool Function NextSwarm(Float intervalDays)
     SwarmLastTime.SetValue(now)
     Unlock()
     return True
-EndFunction
-
-
-Bool Function ShouldHandleEvent(ScriptObject ref, Var[] args) Global
-    return (args[0] as ScriptObject) == ref
 EndFunction
 
 
@@ -223,28 +210,6 @@ Bool Function OnAdded(ScriptObject ref, Var[] messageArgs = None)
         i += 1
     EndWhile
     return False
-EndFunction
-
-
-Function OnApplyResult(ScriptObject ref, Bool success, Var[] messageArgs = None)
-    If !theStaticData
-        return
-    EndIf
-    Int i = 0
-    While i < theStaticData.Length
-        If theStaticData[i].ref == ref
-            If success
-                If theStaticData[i].runMessage
-                    ShowMessage(theStaticData[i].runMessage, messageArgs)
-                EndIf
-            Else
-                theRuntimeData[i].count += 1
-                UpdatePerks(theStaticData[i].perks, theRuntimeData[i].count)
-            EndIf
-            return
-        EndIf
-        i += 1
-    EndWhile
 EndFunction
 
 
@@ -317,14 +282,18 @@ Event Actor.OnKill(Actor akSender, Actor akVictim)
     While i < theStaticData.Length
         If theStaticData[i].type == TypeKillValue
             If Roll(theRuntimeData[i].count, theRuntimeData[i].calculatedChance)
-                Var[] args = new Var[4]
-                args[0] = theStaticData[i].ref
-                args[1] = akSender
-                args[2] = akVictim
-                args[3] = theRuntimeData[i].count
-                theRuntimeData[i].count -= 1
-                SendCustomEvent("OnKilled", args)
-                UpdatePerks(theStaticData[i].perks, theRuntimeData[i].count)
+                Var[] args = new Var[3]
+                args[0] = akSender
+                args[1] = akVictim
+                args[2] = theRuntimeData[i].count
+                ApplyResult resultArgs = theStaticData[i].ref.CallFunction("OnKilled", args) As ApplyResult
+                If resultArgs
+                    theRuntimeData[i].count -= 1
+                    If theStaticData[i].runMessage
+                        ShowMessage(theStaticData[i].runMessage, resultArgs)
+                    EndIf
+                    UpdatePerks(theStaticData[i].perks, theRuntimeData[i].count)
+                EndIf
             EndIf
         EndIf
         i += 1
@@ -343,7 +312,6 @@ Float Function HandleRPGTimer(Int timerId)
 
     Bool tryRoll = False
     String eventName = ""
-    Var[] extraArgs = None
 
     If thisStaticData.type == TypeIntervalValue
         tryRoll = True
@@ -362,29 +330,23 @@ Float Function HandleRPGTimer(Int timerId)
     If tryRoll
         If Roll(thisRuntimeData.count, thisRuntimeData.calculatedChance)
             Var[] args = None
-            If extraArgs
-                args = new Var[3 + extraArgs.Length]
-            Else
-                args = new Var[3]
-            EndIf
-            args[0] = thisStaticData.ref
-            args[1] = Player
-            args[2] = thisRuntimeData.count
-            If extraArgs
-                Int i = 0
-                While i < extraArgs.Length
-                    args[i + 3] = extraArgs[i]
-                    i += 1
-                EndWhile
-            EndIf
-            thisRuntimeData.count -= 1
-            UpdatePerks(thisStaticData.perks, thisRuntimeData.count)
+            args = new Var[2]
+            args[0] = Player
+            args[1] = thisRuntimeData.count
+            ApplyResult resultArgs = None
             If thisStaticData.type == TypeIntervalValue
-                SendCustomEvent("OnInterval", args)
+                resultArgs = thisStaticData.ref.CallFunction("OnInterval", args) As ApplyResult
             ElseIf thisStaticData.type == TypeRadiationValue
-                SendCustomEvent("OnRadiation", args)
+                resultArgs = thisStaticData.ref.CallFunction("OnRadiation", args) As ApplyResult
             ElseIf thisStaticData.type == TypeSprintingValue
-                SendCustomEvent("OnSprinting", args)
+                resultArgs = thisStaticData.ref.CallFunction("OnSprinting", args) As ApplyResult
+            EndIf
+            If resultArgs
+                thisRuntimeData.count -= 1
+                If thisStaticData.runMessage
+                    ShowMessage(thisStaticData.runMessage, resultArgs)
+                EndIf
+                UpdatePerks(thisStaticData.perks, thisRuntimeData.count)
             EndIf
         EndIf
     EndIf

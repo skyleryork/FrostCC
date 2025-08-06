@@ -1,6 +1,7 @@
 Scriptname Swarm:SwarmSpawnActivatorScript extends ObjectReference
 
 
+Keyword Property SwarmActiveSpawn Auto Const Mandatory
 FormList Property SwarmSpawnMarkers Auto Const Mandatory
 ActorValue Property SwarmHoldupImmunity Auto Const Mandatory
 ActorValue Property SwarmAssistance Auto Const Mandatory
@@ -24,31 +25,7 @@ Function Init(RefCollectionAlias refCollection, Form spawn, Int numSpawns, Int m
     SwarmMaxActiveSpawns = maxActive
     SwarmMinSpawnDistance = minDistance
     SwarmMaxSpawnDistance = maxDistance
-    SwarmSpawns.RemoveAll()
     StartTimer(0.5, 1)
-EndFunction
-
-
-Int Function GetSpawnsRemaining()
-    return SpawnsRemaining
-EndFunction
-
-
-Int Function GetSpawnsActive()
-    return SwarmSpawns.GetCount()
-EndFunction
-
-
-Function CleanupSpawns()
-    Int i = 0
-    While i < SwarmSpawns.GetCount()
-        Actor thisActor = SwarmSpawns.GetAt(i) as Actor
-        If thisActor.IsDead() || !thisActor.Is3DLoaded()
-            SwarmSpawns.RemoveRef(thisActor)
-        Else
-            i += 1
-        EndIf
-    EndWhile
 EndFunction
 
 
@@ -62,6 +39,7 @@ Bool Function AddSpawns()
         nextMarker += 1
 
         Actor thisActor = marker.PlaceAtMe(SwarmSpawn, abInitiallyDisabled = True) as Actor
+        thisActor.AddKeyword(SwarmActiveSpawn)
         SwarmSpawns.AddRef(thisActor)
         SpawnsRemaining -= 1
 
@@ -86,8 +64,10 @@ EndEvent
 
 
 Event OnTimer(Int timerId)
-    CleanupSpawns()
     If AddSpawns()
         StartTimer(0.5, 1)
+    Else
+        Self.Disable()
+        Self.Delete()
     EndIf
 EndEvent

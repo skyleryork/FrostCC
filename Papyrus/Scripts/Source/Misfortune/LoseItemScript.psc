@@ -11,6 +11,8 @@ Int[] Property LoseItemDetection Auto Const Mandatory
 FormList Property LoseItemPerks Auto Const Mandatory
 Message Property LoseItemMessage Auto Const Mandatory
 Message Property LoseItemPerkMessage Auto Const Mandatory
+
+String Property LoseItemCategoryConfig = "Misfortune" Auto Const
 String Property LoseItemChanceConfig Auto Const Mandatory
 String Property LoseItemDurationConfig Auto Const Mandatory
 
@@ -38,6 +40,7 @@ Event OnInit()
         data.perks = LoseItemPerks
         data.addedMessage = LoseItemPerkMessage
         data.runMessage = LoseItemMessage
+        data.categoryConfig = LoseItemCategoryConfig
         data.chanceConfig = LoseItemChanceConfig
         data.durationConfig = LoseItemDurationConfig
         Runtime.RegisterMisfortune(data)
@@ -47,15 +50,9 @@ Event OnInit()
 EndEvent
 
 
-Event Runtime:RPGScript.OnSprinting(Runtime:RPGScript ref, Var[] args)
-    If !Runtime:RPGScript.ShouldHandleEvent(Self, args)
-        return
-    EndIf
-
-    Actor Player = args[1] as Actor
-
+Runtime:RPGScript:ApplyResult Function OnSprinting(Actor player, Int rank)
     FormList keywords = LoseItemKeywords
-    Form[] allItems = Player.GetInventoryItems()
+    Form[] allItems = player.GetInventoryItems()
     Int[] filtered = keywords.FindFormsByKeywords(allItems)
     Int[] indices = ChanceApi.ShuffledIndices(allItems.Length)
 
@@ -74,22 +71,21 @@ Event Runtime:RPGScript.OnSprinting(Runtime:RPGScript ref, Var[] args)
     EndWhile
 
     If !item || index < 0
-        ref.OnApplyResult(Self, False)
-        return
+        return None
     EndIf
 
     Sound loseSound = LoseItemSounds.GetAt(index) as Sound
     Int detection = LoseItemDetection[index]
 
-    Player.RemoveItem(item)
+    player.RemoveItem(item)
 
     If loseSound
-        loseSound.Play(Player)
+        loseSound.Play(player)
     EndIf
 
     If detection
-        Player.CreateDetectionEvent(Player, detection)
+        player.CreateDetectionEvent(player, detection)
     EndIf
 
-    ref.OnApplyResult(Self, True)
-EndEvent
+    return new Runtime:RPGScript:ApplyResult
+EndFunction
