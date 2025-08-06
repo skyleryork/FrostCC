@@ -80,38 +80,20 @@ Event Runtime:RPGScript.OnInterval(Runtime:RPGScript ref, Var[] args)
     Actor Player = args[1] as Actor
     Bounty:BountySpawnActivatorScript:BountyParams params = BountyParams
 
-    WorldSpace thisWorldspace = Player.GetWorldspace()
-    ObjectReference[] markers = Player.FindAllReferencesOfType(BountySpawnMarkers, maxSpawnDistance)
-    ObjectReference[] foundMarkers = new ObjectReference[markers.Length]
-
-    Int numFoundMarkers = 0
-    int i = 0
-    While i < markers.Length
-        float distance = Player.GetDistance(markers[i])
-        If distance >= minSpawnDistance && distance <= maxSpawnDistance && markers[i].GetWorldspace() == thisWorldspace
-            If !Player.HasDetectionLOS(markers[i]) && !markers[i].HasDirectLOS(Player, asTargetNode = "Head")
-                If markers[i].FindAllReferencesWithKeyword(BountySpawnerKeyword, minSpawnDistance).Length == 0
-                    foundMarkers[numFoundMarkers] = markers[i]
-                    numFoundMarkers += 1
-                EndIf
-            EndIf
-        EndIf
-        i += 1
-    EndWhile
-
-    If numFoundMarkers == 0
+    ObjectReference[] foundMarkers = SpawnUtils.FindSpawnMarkers(Player, BountySpawnMarkers, minSpawnDistance, maxSpawnDistance, BountySpawnerKeyword)
+    If foundMarkers.Length == 0
         ref.OnApplyResult(Self, False)
         return
     EndIf
 
-    ObjectReference marker = foundMarkers[Utility.RandomInt(0, numFoundMarkers - 1)]
+    ObjectReference marker = foundMarkers[Utility.RandomInt(0, foundMarkers.Length - 1)]
     Bounty:BountySpawnActivatorScript spawner = marker.PlaceAtMe(BountySpawnActivator) as Bounty:BountySpawnActivatorScript
     spawner.AddKeyword(BountySpawnerKeyword)
 
     FormList spawns = BountySpawns
     Form[] toSpawn = new Form[Utility.RandomInt(params.minQuantity, params.maxQuantity)]
     Int[] indices = ChanceApi.ShuffledIndices(spawns.GetSize())
-    i = 0
+    Int i = 0
     While i < toSpawn.Length
         toSpawn[i] = spawns.GetAt(indices[i % indices.Length])
         i += 1

@@ -10,6 +10,7 @@ Misfortune:RadiationHotspotScript RadiationHotspotMisfortune = None
 Bounty:BountyScript BountyFeralGhouls = None
 Loot:OnKillScript LootNPCWater = None
 Effect:OnKillSanityScript SanityTemporaryInsanity = None
+Swarm:SwarmScript SwarmFeralGhoul = None
 
 Int[] ItemDie = None
 Int[] ItemResults = None
@@ -109,6 +110,10 @@ Function InitVars()
 
     If SanityTemporaryInsanity == None
         SanityTemporaryInsanity = GetOwningQuest().GetAlias(19) as Effect:OnKillSanityScript
+    EndIf
+
+    If SwarmFeralGhoul == None
+        SwarmFeralGhoul = GetOwningQuest().GetAlias(20) as Swarm:SwarmScript
     EndIf
 EndFunction
 
@@ -565,6 +570,16 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
             PrintMessage(status)
         Else
             status = viewer + ", temporary insanity maxed"
+            Respond(id, 1, status)
+            PrintMessage(status)
+        EndIf
+
+    elseif command.command == "swarm-feralghoul"
+        If SwarmFeralGhoul.Add()
+            Respond(id, 0, status)
+            PrintMessage(status)
+        Else
+            status = viewer + ", feral ghoul swarm maxed"
             Respond(id, 1, status)
             PrintMessage(status)
         EndIf
