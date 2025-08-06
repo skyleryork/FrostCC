@@ -1,6 +1,9 @@
 Scriptname Runtime:RPGScript extends ReferenceAlias
 
 
+GlobalVariable Property SwarmLastTime Auto Const Mandatory
+
+
 CustomEvent OnParseSettings
 CustomEvent OnInterval
 CustomEvent OnRadiation
@@ -180,6 +183,19 @@ Function ShowMessage(Message theMessage, Var[] args = None)
     ElseIf args.Length >= 1
         theMessage.Show(args[0] as Float)
     EndIf
+EndFunction
+
+
+Bool Function NextSwarm(Float intervalDays)
+    Lock()
+    Float now = Utility.GetCurrentGameTime()
+    If (now - SwarmLastTime.GetValue()) < intervalDays
+        Unlock()
+        return False
+    EndIf
+    SwarmLastTime.SetValue(now)
+    Unlock()
+    return True
 EndFunction
 
 
