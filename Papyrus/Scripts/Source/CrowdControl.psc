@@ -10,7 +10,16 @@ Misfortune:RadiationHotspotScript RadiationHotspotMisfortune = None
 Bounty:BountyScript BountyFeralGhouls = None
 Loot:OnKillScript LootNPCWater = None
 Effect:OnKillSanityScript SanityTemporaryInsanity = None
-Swarm:SwarmScript SwarmFeralGhoul = None
+Swarm:SwarmScript SwarmFeralGhouls = None
+
+ReferenceAlias Property LoseItemMisfortuneAlias Auto Const Mandatory
+ReferenceAlias Property IrradiationMisfortuneAlias Auto Const Mandatory
+ReferenceAlias Property RadiationHotspotMisfortuneAlias Auto Const Mandatory
+ReferenceAlias Property BountyFeralGhoulsAlias Auto Const Mandatory
+ReferenceAlias Property LootNPCWaterAlias Auto Const Mandatory
+ReferenceAlias Property SanityTemporaryInsanityAlias Auto Const Mandatory
+ReferenceAlias Property SwarmFeralGhoulsAlias Auto Const Mandatory
+
 
 Int[] ItemDie = None
 Int[] ItemResults = None
@@ -73,6 +82,34 @@ Function InitVars()
         keywordActorFriendlyNpc = Game.GetFormFromFile(0x10053FF, "CrowdControl.esp") as Keyword
     endif
 
+    If LoseItemMisfortune == None
+        LoseItemMisfortune = LoseItemMisfortuneAlias as Misfortune:LoseItemScript
+    EndIf
+
+    If IrradiationMisfortune == None
+        IrradiationMisfortune = IrradiationMisfortuneAlias as Misfortune:IrradiationScript
+    EndIf
+
+    If RadiationHotspotMisfortune == None
+        RadiationHotspotMisfortune = RadiationHotspotMisfortuneAlias as Misfortune:RadiationHotspotScript
+    EndIf
+
+    If BountyFeralGhouls == None
+        BountyFeralGhouls = BountyFeralGhoulsAlias as Bounty:BountyScript
+    EndIf
+
+    If LootNPCWater == None
+        LootNPCWater = LootNPCWaterAlias as Loot:OnKillScript
+    EndIf
+
+    If SanityTemporaryInsanity == None
+        SanityTemporaryInsanity = SanityTemporaryInsanityAlias as Effect:OnKillSanityScript
+    EndIf
+
+    If SwarmFeralGhouls == None
+        SwarmFeralGhouls = SwarmFeralGhoulsAlias as Swarm:SwarmScript
+    EndIf
+
     ; Get rid of Billy
     ReferenceAlias ra = GetAlias(7)
     Actor a = ra.GetActorReference()
@@ -87,34 +124,6 @@ Function InitVars()
     If CH == None
         CH = GetOwningQuest().GetAlias(0) as Chance
 	Endif
-
-    If LoseItemMisfortune == None
-        LoseItemMisfortune = GetOwningQuest().GetAlias(16) as Misfortune:LoseItemScript
-    EndIf
-
-    If IrradiationMisfortune == None
-        IrradiationMisfortune = GetOwningQuest().GetAlias(15) as Misfortune:IrradiationScript
-    EndIf
-
-    If RadiationHotspotMisfortune == None
-        RadiationHotspotMisfortune = GetOwningQuest().GetAlias(14) as Misfortune:RadiationHotspotScript
-    EndIf
-
-    If BountyFeralGhouls == None
-        BountyFeralGhouls = GetOwningQuest().GetAlias(18) as Bounty:BountyScript
-    EndIf
-
-    If LootNPCWater == None
-        LootNPCWater = GetOwningQuest().GetAlias(17) as Loot:OnKillScript
-    EndIf
-
-    If SanityTemporaryInsanity == None
-        SanityTemporaryInsanity = GetOwningQuest().GetAlias(19) as Effect:OnKillSanityScript
-    EndIf
-
-    If SwarmFeralGhoul == None
-        SwarmFeralGhoul = GetOwningQuest().GetAlias(20) as Swarm:SwarmScript
-    EndIf
 EndFunction
 
 Event OnCellLoad()
@@ -575,7 +584,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         EndIf
 
     elseif command.command == "swarm-feralghoul"
-        If SwarmFeralGhoul.Add()
+        If SwarmFeralGhouls.Add()
             Respond(id, 0, status)
             PrintMessage(status)
         Else
