@@ -198,6 +198,7 @@ Bool Function OnAdded(ScriptObject ref, Var[] messageArgs = None)
             If theRuntimeData[i].count < theStaticData[i].perks.GetSize()
                 theRuntimeData[i].count += 1
                 ShowMessageRank(theStaticData[i].addedMessage, theRuntimeData[i].count, messageArgs)
+                UpdatePerks(theStaticData[i].perks, theRuntimeData[i].count)
                 return True
             Else
                 return False
@@ -222,6 +223,7 @@ Function OnApplyResult(ScriptObject ref, Bool success, Var[] messageArgs = None)
                 EndIf
             Else
                 theRuntimeData[i].count += 1
+                UpdatePerks(theStaticData[i].perks, theRuntimeData[i].count)
             EndIf
             return
         EndIf
@@ -248,12 +250,13 @@ Function UpdatePerks(FormList perks, Int count)
         EndIf
         i += 1
     EndWhile
-    While i < perks.GetSize()
-        Perk thePerk = perks.GetAt(i) as Perk
+    Int j = perks.GetSize() - 1
+    While j >= i
+        Perk thePerk = perks.GetAt(j) as Perk
         If Player.HasPerk(thePerk)
             Player.RemovePerk(thePerk)
         EndIf
-        i += 1
+        j -= 1
     EndWhile
 EndFunction
 
@@ -305,6 +308,7 @@ Event Actor.OnKill(Actor akSender, Actor akVictim)
                 args[3] = theRuntimeData[i].count
                 theRuntimeData[i].count -= 1
                 SendCustomEvent("OnKilled", args)
+                UpdatePerks(theStaticData[i].perks, theRuntimeData[i].count)
             EndIf
         EndIf
         i += 1
@@ -358,6 +362,7 @@ Float Function HandleRPGTimer(Int timerId)
                 EndWhile
             EndIf
             thisRuntimeData.count -= 1
+            UpdatePerks(thisStaticData.perks, thisRuntimeData.count)
             If thisStaticData.type == TypeIntervalValue
                 SendCustomEvent("OnInterval", args)
             ElseIf thisStaticData.type == TypeRadiationValue
@@ -367,8 +372,6 @@ Float Function HandleRPGTimer(Int timerId)
             EndIf
         EndIf
     EndIf
-
-    UpdatePerks(thisStaticData.perks, thisRuntimeData.count)
 
     return thisStaticData.timerInterval
 EndFunction

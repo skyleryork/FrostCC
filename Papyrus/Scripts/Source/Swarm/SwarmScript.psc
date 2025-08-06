@@ -84,16 +84,9 @@ EndFunction
 
 
 Function StartSwarm(Float time)
-    EndSwarm()
+    SwarmSpawns.RemoveAll()
     SpawnsRemaining = SwarmMaxSpawns
     StartTimer(0.5, 1)
-EndFunction
-
-
-Function EndSwarm()
-    SwarmSpawns.RemoveAll()
-    SpawnsRemaining = 0
-    CancelTimer(1)
 EndFunction
 
 
@@ -113,9 +106,10 @@ EndFunction
 Bool Function AddSpawns()
     Int i = 0
     ObjectReference[] foundMarkers = SpawnUtils.FindSpawnMarkers(Player, SwarmSpawnMarkers, minSpawnDistance, maxSpawnDistance)
+    Int[] indices = ChanceApi.ShuffledIndices(foundMarkers.Length)
     Int nextMarker = 0
-    While (SpawnsRemaining > 0) && (SwarmSpawns.GetCount() < SwarmMaxActiveSpawns) && (nextMarker < foundMarkers.Length)
-        ObjectReference marker = foundMarkers[nextMarker]
+    While (SpawnsRemaining > 0) && (SwarmSpawns.GetCount() < SwarmMaxActiveSpawns) && (nextMarker < indices.Length)
+        ObjectReference marker = foundMarkers[indices[nextMarker]]
         nextMarker += 1
 
         Actor thisActor = marker.PlaceAtMe(SwarmSpawn, abInitiallyDisabled = True) as Actor
@@ -140,8 +134,6 @@ Event OnTimer(Int timerId)
     If AddSpawns()
         SwarmLastTime.SetValue(Utility.GetCurrentGameTime())
         StartTimer(0.5, 1)
-    Else
-        EndSwarm()
     EndIf
 EndEvent
 

@@ -154,6 +154,7 @@ namespace CrowdControl.Games.Packs.Fallout4_Frost
 			#region Swarm
 
 			new Effect("Feral Ghouls", $"swarm__feralghoul") { Price = GetPrice(25), Category = "Swarm" },
+			new Effect("Pests", $"swarm__pests") { Price = GetPrice(25), Category = "Swarm" },
 
 			#endregion
 
