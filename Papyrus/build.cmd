@@ -19,23 +19,8 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 cd /D %CompilerPath%
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-for /R "%PscPath%" %%F in ("*.psc") do (
-    call :compile "%%F"
-)
-goto :startwait
-
-:compile
-start "" /B cmd /c PapyrusCompiler.exe %1 -f="Institute_Papyrus_Flags.flg" -i="%F4SEScriptSourcePath%;%PscPath%;%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%PexPath%" -op
-exit /b
-
-:startwait
-:waitloop
-tasklist /FI "IMAGENAME eq PapyrusCompiler.exe" | find /I "PapyrusCompiler.exe" >nul
-if not errorlevel 1 (
-    echo Waiting for script compilers to finish...
-    timeout /t 1 >nul
-    goto waitloop
-)
+PapyrusCompiler.exe "%PscPath%" -f="Institute_Papyrus_Flags.flg" -i="%F4SEScriptSourcePath%;%PscPath%;%FalloutPath%\Data\Scripts\Source;%FalloutPath%\Data\Scripts\Source\User;%FalloutPath%\Data\Scripts\Source\Base" -o="%PexPath%" -a -op -q
+if %errorlevel% neq 0 exit /b %errorlevel%
 
 type nul > "%CrowdControlPath%archive.source"
 

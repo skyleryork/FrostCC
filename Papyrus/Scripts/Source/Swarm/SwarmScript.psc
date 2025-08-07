@@ -1,6 +1,9 @@
 Scriptname Swarm:SwarmScript extends ReferenceAlias
 
 
+ReferenceAlias Property RuntimeAlias Auto Const Mandatory
+
+
 Float Property SwarmChance Auto Const Mandatory
 Float Property SwarmDuration Auto Const Mandatory
 
@@ -46,7 +49,7 @@ EndFunction
 
 Event OnInit()
     If Runtime == None
-        Runtime = GetOwningQuest().GetAlias(0) as Runtime:RPGScript
+        Runtime = RuntimeAlias as Runtime:RPGScript
     EndIf
 
     If !Runtime.ContainsMisfortune(Self)

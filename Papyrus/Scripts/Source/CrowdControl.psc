@@ -10,19 +10,20 @@ Misfortune:RadiationHotspotScript RadiationHotspotMisfortune = None
 Bounty:BountyScript BountyFeralGhouls = None
 Loot:OnKillScript LootNPCWater = None
 Effect:OnKillSanityScript SanityTemporaryInsanity = None
-Swarm:SwarmScript SwarmFeralGhouls = None
-Swarm:SwarmScript SwarmPests = None
-Swarm:SwarmScript SwarmMaldenmen = None
+Swarm:SwarmScript Swarm = None
+; Swarm:SwarmScript SwarmPests = None
+; Swarm:SwarmScript SwarmMaldenmen = None
 
+ReferenceAlias Property ChanceAlias Auto Const Mandatory
 ReferenceAlias Property LoseItemMisfortuneAlias Auto Const Mandatory
 ReferenceAlias Property IrradiationMisfortuneAlias Auto Const Mandatory
 ReferenceAlias Property RadiationHotspotMisfortuneAlias Auto Const Mandatory
 ReferenceAlias Property BountyFeralGhoulsAlias Auto Const Mandatory
 ReferenceAlias Property LootNPCWaterAlias Auto Const Mandatory
 ReferenceAlias Property SanityTemporaryInsanityAlias Auto Const Mandatory
-ReferenceAlias Property SwarmFeralGhoulsAlias Auto Const Mandatory
-ReferenceAlias Property SwarmPestsAlias Auto Const Mandatory
-ReferenceAlias Property SwarmMaldenmenAlias Auto Const Mandatory
+ReferenceAlias Property SwarmAlias Auto Const Mandatory
+; ReferenceAlias Property SwarmPestsAlias Auto Const Mandatory
+; ReferenceAlias Property SwarmMaldenmenAlias Auto Const Mandatory
 
 
 Int[] ItemDie = None
@@ -86,6 +87,10 @@ Function InitVars()
         keywordActorFriendlyNpc = Game.GetFormFromFile(0x10053FF, "CrowdControl.esp") as Keyword
     endif
 
+    If CH == None
+        CH = ChanceAlias as Chance
+	Endif
+
     If LoseItemMisfortune == None
         LoseItemMisfortune = LoseItemMisfortuneAlias as Misfortune:LoseItemScript
     EndIf
@@ -110,17 +115,17 @@ Function InitVars()
         SanityTemporaryInsanity = SanityTemporaryInsanityAlias as Effect:OnKillSanityScript
     EndIf
 
-    If SwarmFeralGhouls == None
-        SwarmFeralGhouls = SwarmFeralGhoulsAlias as Swarm:SwarmScript
+    If Swarm == None
+        Swarm = SwarmAlias as Swarm:SwarmScript
     EndIf
 
-    If SwarmPests == None
-        SwarmPests = SwarmPestsAlias as Swarm:SwarmScript
-    EndIf
+    ; If SwarmPests == None
+    ;     SwarmPests = SwarmPestsAlias as Swarm:SwarmScript
+    ; EndIf
 
-    If SwarmMaldenmen == None
-        SwarmMaldenmen = SwarmMaldenmenAlias as Swarm:SwarmScript
-    EndIf
+    ; If SwarmMaldenmen == None
+    ;     SwarmMaldenmen = SwarmMaldenmenAlias as Swarm:SwarmScript
+    ; EndIf
 
     ; Get rid of Billy
     ReferenceAlias ra = GetAlias(7)
@@ -132,10 +137,6 @@ Function InitVars()
     endif
 
     LastCellLoadAt = 0.0
-
-    If CH == None
-        CH = GetOwningQuest().GetAlias(0) as Chance
-	Endif
 EndFunction
 
 Event OnCellLoad()
@@ -596,7 +597,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         EndIf
 
     elseif command.command == "swarm-feralghoul"
-        If SwarmFeralGhouls.Add()
+        If Swarm.Add()
             Respond(id, 0, status)
             PrintMessage(status)
         Else
@@ -605,25 +606,25 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
             PrintMessage(status)
         EndIf
 
-    elseif command.command == "swarm-pests"
-        If SwarmPests.Add()
-            Respond(id, 0, status)
-            PrintMessage(status)
-        Else
-            status = viewer + ", pest swarm maxed"
-            Respond(id, 1, status)
-            PrintMessage(status)
-        EndIf
+    ; elseif command.command == "swarm-pests"
+    ;     If SwarmPests.Add()
+    ;         Respond(id, 0, status)
+    ;         PrintMessage(status)
+    ;     Else
+    ;         status = viewer + ", pest swarm maxed"
+    ;         Respond(id, 1, status)
+    ;         PrintMessage(status)
+    ;     EndIf
 
-    elseif command.command == "swarm-maldenmen"
-        If SwarmMaldenmen.Add()
-            Respond(id, 0, status)
-            PrintMessage(status)
-        Else
-            status = viewer + ", Maldenmen swarm maxed"
-            Respond(id, 1, status)
-            PrintMessage(status)
-        EndIf
+    ; elseif command.command == "swarm-maldenmen"
+    ;     If SwarmMaldenmen.Add()
+    ;         Respond(id, 0, status)
+    ;         PrintMessage(status)
+    ;     Else
+    ;         status = viewer + ", Maldenmen swarm maxed"
+    ;         Respond(id, 1, status)
+    ;         PrintMessage(status)
+    ;     EndIf
 
     elseif command.command == "test"
         Int lockCount = 25
