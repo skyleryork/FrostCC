@@ -1,7 +1,7 @@
 Scriptname Misfortune:RadiationHotspotActivatorScript extends ObjectReference
 
 
-Int MaxRadiationHazardBits = 4
+Int MaxRadiationHazardBits = 4 Const
 
 
 FormList Property RadiationHazards Auto Const Mandatory

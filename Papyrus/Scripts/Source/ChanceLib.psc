@@ -1,4 +1,4 @@
-Scriptname Chance extends ReferenceAlias
+Scriptname ChanceLib extends ReferenceAlias
 
 
 FormList Property JunkItems Auto

@@ -1,76 +1,30 @@
-Scriptname Misfortune:RadiationHotspotScript extends ReferenceAlias
+Scriptname Misfortune:RadiationHotspotScript extends Runtime:IntervalEffectBaseScript
 
-
-Struct RadiationHotspot
-    Int radiation
-    Float spacing
-    Float decayDays
-EndStruct
-
-
-Float Property RadiationHotspotChance Auto Const Mandatory
-Float Property RadiationHotspotDuration Auto Const Mandatory
 
 Activator Property RadiationHotspotActivator Auto Const Mandatory
-RadiationHotspot[] Property RadiationHotspots Auto Const Mandatory
-Float Property RadiationHotspotDecayScale Auto Const Mandatory
-
-FormList Property RadiationHotspotPerks Auto Const Mandatory
-Message Property RadiationHotspotPerkMessage Auto Const Mandatory
-Message Property RadiationHotspotMessage Auto Const Mandatory
-
-String Property RadiationHotspotCategoryConfig = "Misfortune" Auto Const
-String Property RadiationHotspotChanceConfig Auto Const Mandatory
-String Property RadiationHotspotDurationConfig Auto Const Mandatory
+Int Property Radiation Auto Const Mandatory
+Float Property Spacing Auto Const Mandatory
+Float Property DecayDays Auto Const Mandatory
+Float Property DecayScale = 0.05 Auto Const
 
 
-Runtime:RPGScript Runtime = None
-
-
-Bool Function Add()
-    return Runtime.OnAdded(Self)
+Function ShowExecuteMessage()
+    If ExecuteMessage
+        ExecuteMessage.Show(Radiation)
+    EndIf
 EndFunction
 
 
-Event OnInit()
-    If Runtime == None
-        Runtime = GetOwningQuest().GetAlias(0) as Runtime:RPGScript
-    EndIf
+Bool Function ExecuteEffect()
+    Int index = GetCount() - 1
 
-    If !Runtime.ContainsMisfortune(Self)
-        Runtime:RPGScript:StaticData data = new Runtime:RPGScript:StaticData
-        data.ref = Self
-        data.timerInterval = 1.0
-        data.type = Runtime.TypeInterval
-        data.staticChance = RadiationHotspotChance
-        data.staticDuration = RadiationHotspotDuration
-        data.perks = RadiationHotspotPerks
-        data.addedMessage = RadiationHotspotPerkMessage
-        data.runMessage = RadiationHotspotMessage
-        data.categoryConfig = RadiationHotspotCategoryConfig
-        data.chanceConfig = RadiationHotspotChanceConfig
-        data.durationConfig = RadiationHotspotChanceConfig
-        Runtime.RegisterMisfortune(data)
-
-        Debug.Trace("Misfortune:RadiationHotspotScript: registered")
-    EndIf
-EndEvent
-
-
-Runtime:RPGScript:ApplyResult Function OnInterval(Actor player, Int rank)
-    Int index = rank - 1
-
-    RadiationHotspot data = RadiationHotspots[index]
-    ObjectReference[] hotspots = Player.FindAllReferencesOfType(RadiationHotspotActivator, data.spacing)
+    ObjectReference[] hotspots = GetActorReference().FindAllReferencesOfType(RadiationHotspotActivator, Spacing)
     If hotspots.Length > 0
-        return None
+        return False
     EndIf
 
-    Misfortune:RadiationHotspotActivatorScript hotspot = Player.PlaceAtMe(RadiationHotspotActivator) as Misfortune:RadiationHotspotActivatorScript
+    Misfortune:RadiationHotspotActivatorScript hotspot = GetActorReference().PlaceAtMe(RadiationHotspotActivator) as Misfortune:RadiationHotspotActivatorScript
+    hotspot.Init(Radiation, DecayScale, DecayDays)
 
-    hotspot.Init(data.radiation, RadiationHotspotDecayScale, data.decayDays)
-
-    Runtime:RPGScript:ApplyResult result = new Runtime:RPGScript:ApplyResult
-    result.param0 = data.radiation
-    return result
+    return True
 EndFunction

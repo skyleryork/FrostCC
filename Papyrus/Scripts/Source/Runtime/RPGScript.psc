@@ -93,7 +93,7 @@ Function ParseSettings(StaticData thisStaticData, RuntimeData thisRuntimeData)
 
     If thisStaticData.type != TypeKillValue
         Float durationSetting = CrowdControlApi.GetFloatSetting(thisStaticData.categoryConfig, thisStaticData.durationConfig, thisStaticData.staticDuration)
-        thisRuntimeData.calculatedChance = Chance.CalculateTimescaledChance(chanceSetting, durationSetting, thisStaticData.timerInterval)
+        thisRuntimeData.calculatedChance = ChanceLib.CalculateTimescaledChance(chanceSetting, durationSetting, thisStaticData.timerInterval)
     Else
         thisRuntimeData.calculatedChance = chanceSetting
     EndIf

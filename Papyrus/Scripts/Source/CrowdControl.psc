@@ -3,7 +3,7 @@
 Scriptname CrowdControl extends ReferenceAlias
 
 
-Chance CH = None
+ChanceLib Chance = None
 Misfortune:LoseItemScript LoseItemMisfortune = None
 Misfortune:IrradiationScript IrradiationMisfortune = None
 Misfortune:RadiationHotspotScript RadiationHotspotMisfortune = None
@@ -87,8 +87,8 @@ Function InitVars()
         keywordActorFriendlyNpc = Game.GetFormFromFile(0x10053FF, "CrowdControl.esp") as Keyword
     endif
 
-    If CH == None
-        CH = ChanceAlias as Chance
+    If Chance == None
+        Chance = ChanceAlias as ChanceLib
 	Endif
 
     If LoseItemMisfortune == None
@@ -499,7 +499,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
     int type = ccCommand.type
 
     If command.command == "addlock"
-        If CH.AddForceLockTier(command.id as Int, command.minQuantity)
+        If Chance.AddForceLockTier(command.id as Int, command.minQuantity)
             PrintMessage(status)
             Respond(id, 0, status)
         Else
@@ -508,7 +508,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         EndIf
 
     ElseIf command.command == "addunlock"
-        If CH.AddForceUnlockTier(command.id as Int, command.minQuantity)
+        If Chance.AddForceUnlockTier(command.id as Int, command.minQuantity)
             PrintMessage(status)
             Respond(id, 0, status)
         Else
@@ -517,7 +517,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         EndIf
 
     elseif command.command == "additem"
-        If CH.AddItem(FindForm(command.id), command.minQuantity)
+        If Chance.AddItem(FindForm(command.id), command.minQuantity)
             Respond(id, 0, status)
             PrintMessage(status)
         Else
@@ -531,7 +531,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         PrintMessage(status)
 
     elseif command.command == "hazard-radiation"
-        If RadiationHotspotMisfortune.Add()
+        If RadiationHotspotMisfortune.IncrementCount()
             Respond(id, 0, status)
             PrintMessage(status)
         Else
@@ -626,37 +626,37 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
     ;         PrintMessage(status)
     ;     EndIf
 
-    elseif command.command == "test"
-        Int lockCount = 25
-        Int itemCount = 25
-        CH.AddForceLockTier(1, lockCount * 4)
-        CH.AddForceLockTier(2, lockCount * 3)
-        CH.AddForceLockTier(3, lockCount * 2)
-        CH.AddForceLockTier(4, lockCount)
-        CH.AddItem(Game.GetFormFromFile(0x13570, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x13571, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x13573, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x13574, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x1357A, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x1357B, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x1357C, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x1357D, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x1357E, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x13584, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x13585, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x13586, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x13587, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x13588, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x13589, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x1358A, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x1358B, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x1BE4F, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x1BE50, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x1BE51, "CrowdControl.esp") as Form, itemCount)
-        CH.AddItem(Game.GetFormFromFile(0x1BE53, "CrowdControl.esp") as Form, itemCount)
+    ; elseif command.command == "test"
+    ;     Int lockCount = 25
+    ;     Int itemCount = 25
+    ;     CH.AddForceLockTier(1, lockCount * 4)
+    ;     CH.AddForceLockTier(2, lockCount * 3)
+    ;     CH.AddForceLockTier(3, lockCount * 2)
+    ;     CH.AddForceLockTier(4, lockCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x13570, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x13571, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x13573, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x13574, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x1357A, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x1357B, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x1357C, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x1357D, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x1357E, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x13584, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x13585, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x13586, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x13587, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x13588, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x13589, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x1358A, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x1358B, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x1BE4F, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x1BE50, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x1BE51, "CrowdControl.esp") as Form, itemCount)
+    ;     CH.AddItem(Game.GetFormFromFile(0x1BE53, "CrowdControl.esp") as Form, itemCount)
 
-        Respond(id, 0, status)
-        PrintMessage(status)
+    ;     Respond(id, 0, status)
+    ;     PrintMessage(status)
 
     elseif command.command == "fasttravel"
         if Game.IsFastTravelEnabled()

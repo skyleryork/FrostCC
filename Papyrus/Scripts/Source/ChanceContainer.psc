@@ -4,7 +4,7 @@ Scriptname ChanceContainer extends ObjectReference
 Int Property ChanceFilter Auto
 
 Actor Player = None
-Chance CH = None
+ChanceLib Chance = None
 Form EmptyItem = None
 
 EffectShader JunkHighlight = None
@@ -20,8 +20,8 @@ Function Init()
         Player = Game.GetPlayer()
     EndIf
 
-    If CH == None
-        CH = ( Game.GetFormFromFile(0xF99, "CrowdControl.esp") as Quest ).GetAlias(0) as Chance
+    If Chance == None
+        Chance = ( Game.GetFormFromFile(0x24787, "CrowdControl.esp") as Quest ).GetAlias(0) as ChanceLib
     Endif
 
     If EmptyItem == None
@@ -47,7 +47,7 @@ EndFunction
 
 
 Function SetLockTierAndRefresh(Int tier)
-    Self.SetLockLevel(Chance.LockTierToLevel(tier))
+    Self.SetLockLevel(ChanceLib.LockTierToLevel(tier))
     If ( tier > 0 ) && !IsLocked()
         Lock()
     ElseIf ( tier == 0 ) && IsLocked()
@@ -58,9 +58,9 @@ EndFunction
 
 ; forces an unlocked container to be locked, returns true if so
 Bool Function RollLock()
-    Int tier = Chance.LockLevelToTier(Self.GetLockLevel())
+    Int tier = ChanceLib.LockLevelToTier(Self.GetLockLevel())
     If tier == 0
-        Int newTier = CH.RollLock()
+        Int newTier = Chance.RollLock()
         If newTier > 0
             SetLockTierAndRefresh(newTier)
             return True
@@ -77,9 +77,9 @@ Bool Function RollUnlock()
         return False
     EndIf
 
-    Int tier = Chance.LockLevelToTier(lockLevel)
+    Int tier = ChanceLib.LockLevelToTier(lockLevel)
     If tier > 0
-        If CH.RollUnlock(tier)
+        If Chance.RollUnlock(tier)
             SetLockTierAndRefresh(0)
             return True
         EndIf
@@ -89,8 +89,8 @@ EndFunction
 
 
 Int Function RollItems()
-    Int tier = Chance.LockLevelToTier(Self.GetLockLevel())
-    Form[] rolled = CH.RollByLockTier(tier, ChanceFilter)
+    Int tier = ChanceLib.LockLevelToTier(Self.GetLockLevel())
+    Form[] rolled = Chance.RollByLockTier(tier, ChanceFilter)
     Int i = 0
     Int highestTier = -1
     While i < rolled.Length

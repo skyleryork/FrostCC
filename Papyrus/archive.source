@@ -1,6 +1,7 @@
 C:\Projects\FrostCC\Papyrus\Scripts\Chance.pex 
 C:\Projects\FrostCC\Papyrus\Scripts\ChanceApi.pex 
 C:\Projects\FrostCC\Papyrus\Scripts\ChanceContainer.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\ChanceLib.pex 
 C:\Projects\FrostCC\Papyrus\Scripts\CrowdControl.pex 
 C:\Projects\FrostCC\Papyrus\Scripts\CrowdControlApi.pex 
 C:\Projects\FrostCC\Papyrus\Scripts\DudMineActivator.pex 
@@ -20,6 +21,8 @@ C:\Projects\FrostCC\Papyrus\Scripts\Misfortune\IrradiationScript.pex
 C:\Projects\FrostCC\Papyrus\Scripts\Misfortune\LoseItemScript.pex 
 C:\Projects\FrostCC\Papyrus\Scripts\Misfortune\RadiationHotspotActivatorScript.pex 
 C:\Projects\FrostCC\Papyrus\Scripts\Misfortune\RadiationHotspotScript.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\Runtime\EffectBaseScript.pex 
+C:\Projects\FrostCC\Papyrus\Scripts\Runtime\IntervalEffectBaseScript.pex 
 C:\Projects\FrostCC\Papyrus\Scripts\Runtime\RPGScript.pex 
 C:\Projects\FrostCC\Papyrus\Scripts\Runtime\SanityScript.pex 
 C:\Projects\FrostCC\Papyrus\Scripts\Scare\FragGrenadeTrapScareScript.pex 

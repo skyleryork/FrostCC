@@ -12,7 +12,7 @@ Auto State startState
 		goToState("waitOpen")
 		Self.Init()
 
-	    Int lockTier = Chance.LockLevelToTier(Self.GetLockLevel())
+	    Int lockTier = ChanceLib.LockLevelToTier(Self.GetLockLevel())
 	    ; are we an Advanced lock?
 	    If lockTier == 1
 	    	Self.AddItem(pLLI_Loot_Lock_Advanced)
