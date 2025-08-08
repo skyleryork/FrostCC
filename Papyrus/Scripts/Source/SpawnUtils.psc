@@ -1,21 +1,37 @@
 Scriptname SpawnUtils
 
 
-ObjectReference[] Function FindSpawnMarkers(Actor source, ObjectReference referenceMarker, Form spawnMarkers, Float minSpawnDistance, Float maxSpawnDistance, Form spawnerKeyword = None, String targetNode = "Head") Global
+ObjectReference[] Function FindSpawnMarkers(Actor source, ObjectReference referenceMarker, Form spawnMarkers, Float minSpawnDistance, Float maxSpawnDistance, Int maxResults = -1, Form spawnerKeyword = None, String targetNode = "Pelvis") Global
     WorldSpace thisWorldspace = source.GetWorldspace()
     ObjectReference[] markers = source.FindAllReferencesOfType(spawnMarkers, maxSpawnDistance)
-    ObjectReference[] potentialMarkers = new ObjectReference[markers.Length]
+    If maxResults == -1
+        maxResults = markers.Length
+    Else
+        maxResults = Math.Min(maxResults, markers.Length) as Int
+    EndIf
+
+    ObjectReference[] potentialMarkers = new ObjectReference[maxResults]
 
     Int numFoundMarkers = 0
     int i = 0
-    While i < markers.Length
-        referenceMarker.MoveTo(markers[i], 0.0, 0.0, 88.0)
-        float distance = source.GetDistance(referenceMarker)
-        If distance >= minSpawnDistance && distance <= maxSpawnDistance && markers[i].GetWorldspace() == thisWorldspace
-            If !source.HasDirectLOS(referenceMarker) && !referenceMarker.HasDirectLOS(source, asTargetNode = targetNode)
-                If !spawnerKeyword || referenceMarker.FindAllReferencesWithKeyword(spawnerKeyword, minSpawnDistance).Length == 0
-                    potentialMarkers[numFoundMarkers] = markers[i]
-                    numFoundMarkers += 1
+    Int[] indices = ChanceApi.ShuffledIndices(markers.Length)
+    While (i < indices.Length) && (numFoundMarkers < potentialMarkers.Length)
+        ObjectReference marker = markers[indices[i]]
+        If marker.GetWorldspace() == thisWorldspace
+            referenceMarker.MoveTo(marker)
+            Utility.Wait(0.2)
+            float distance = source.GetDistance(referenceMarker)
+            If distance >= minSpawnDistance && distance <= maxSpawnDistance
+                referenceMarker.MoveToNearestNavmeshLocation()
+                Utility.Wait(0.2)
+                float angle = referenceMarker.GetHeadingAngle(source)
+                referenceMarker.SetAngle(0.0, 0.0, referenceMarker.GetAngleZ() + angle)
+                Utility.Wait(0.2)
+                If !source.HasDirectLOS(referenceMarker) && !referenceMarker.HasDirectLOS(source, asTargetNode = targetNode)
+                    If !spawnerKeyword || referenceMarker.FindAllReferencesWithKeyword(spawnerKeyword, minSpawnDistance).Length == 0
+                        potentialMarkers[numFoundMarkers] = marker
+                        numFoundMarkers += 1
+                    EndIf
                 EndIf
             EndIf
         EndIf

@@ -1,11 +1,8 @@
 Scriptname Swarm:SwarmSpawnActivatorScript extends ObjectReference
 
 
-Float SpawnTimerInterval = 0.5 Const
+Float SpawnTimerInterval = 1.0 Const
 Int SpawnTimerId = 1 Const
-
-Float MarkersTimerInterval = 5.0 Const
-Int MarkersTimerId= 2
 
 
 Keyword Property ActiveSpawn Auto Const Mandatory
@@ -19,7 +16,6 @@ ActorValue Property Aggresion Auto Const Mandatory
 Actor FocalRef = None
 RefCollectionAlias SwarmSpawns = None
 ObjectReference ReferenceMarker = None
-ObjectReference[] FoundMarkers = None
 Form SwarmSpawn = None
 Int SpawnsActive = 0
 Int SpawnsRemaining = -1
@@ -37,9 +33,7 @@ Function InitCommon(Actor focal, RefCollectionAlias refCollection, ObjectReferen
     SwarmMaxActiveSpawns = maxActive
     SwarmMinSpawnDistance = minDistance
     SwarmMaxSpawnDistance = maxDistance
-    UpdateMarkers()
     StartTimer(SpawnTimerInterval, SpawnTimerId)
-    StartTimer(MarkersTimerInterval, 2)
 EndFunction
 
 
@@ -55,41 +49,41 @@ Function InitMaxTime(Actor focal, RefCollectionAlias refCollection, ObjectRefere
 EndFunction
 
 
-Function UpdateMarkers()
-    MoveTo(FocalRef)
-    FoundMarkers = SpawnUtils.FindSpawnMarkers(FocalRef, ReferenceMarker, SpawnMarkers, SwarmMinSpawnDistance, SwarmMaxSpawnDistance)
-EndFunction
-
-
 Function TrySpawn()
-    Int i = 0
-    Int[] indices = ChanceApi.ShuffledIndices(FoundMarkers.Length)
-    Int nextMarker = 0
-    While (SpawnsRemaining != 0) && (SpawnsActive < SwarmMaxActiveSpawns) && (nextMarker < indices.Length)
-        ObjectReference marker = FoundMarkers[indices[nextMarker]]
-        nextMarker += 1
+    Int maxResults = SwarmMaxActiveSpawns - SpawnsActive
+    If maxResults > 0
+        Int i = 0
+        Debug.Trace("Looking for markers... " + maxResults)
+        ObjectReference[] foundMarkers = SpawnUtils.FindSpawnMarkers(FocalRef, ReferenceMarker, SpawnMarkers, SwarmMinSpawnDistance, SwarmMaxSpawnDistance, maxResults)
+        If foundMarkers.Length
+            Debug.Trace("Found markers = " + foundMarkers.Length)
+            Int nextMarker = 0
+            While (SpawnsRemaining != 0) && (SpawnsActive < SwarmMaxActiveSpawns)
+                ObjectReference marker = foundMarkers[nextMarker % foundMarkers.Length]
+                nextMarker += 1
 
-        Actor thisActor = marker.PlaceAtMe(SwarmSpawn, abInitiallyDisabled = True) as Actor
-        SwarmSpawns.AddRef(thisActor)
-        SpawnsActive += 1
-        SpawnsRemaining -= 1
+                Actor thisActor = marker.PlaceAtMe(SwarmSpawn, abInitiallyDisabled = True) as Actor
+                SwarmSpawns.AddRef(thisActor)
+                SpawnsActive += 1
+                SpawnsRemaining -= 1
 
-        thisActor.MoveToNearestNavmeshLocation()
-        thisActor.SetAngle(0.0, thisActor.GetAngleY(), thisActor.GetAngleZ())
-        thisActor.SetValue(HoldupImmunity, 1)
-        thisActor.SetValue(Assistance, 1)
-        thisActor.SetValue(Confidence, 4)
-        thisActor.SetValue(Aggresion, 1)
-        RegisterForRemoteEvent(thisActor, "OnDying")
-        thisActor.Enable()
-        i += 1
-    EndWhile
+                thisActor.SetAngle(0.0, thisActor.GetAngleY(), thisActor.GetAngleZ())
+                thisActor.SetValue(HoldupImmunity, 1)
+                thisActor.SetValue(Assistance, 1)
+                thisActor.SetValue(Confidence, 4)
+                thisActor.SetValue(Aggresion, 1)
+                RegisterForRemoteEvent(thisActor, "OnDying")
+                thisActor.Enable()
+                i += 1
+            EndWhile
+        EndIf
+    EndIf
 EndFunction
 
 
 Event OnTimer(Int timerId)
     If timerId == SpawnTimerId
-        Bool shouldTrySpawn = (SpawnEndtime < 0.0) || (Utility.GetCurrentGameTime() < SpawnEndtime)
+        Bool shouldTrySpawn = (SpawnsRemaining != 0) && ((SpawnEndtime < 0.0) || (Utility.GetCurrentGameTime() < SpawnEndtime))
         If shouldTrySpawn
             TrySpawn()
         EndIf
@@ -99,7 +93,6 @@ Event OnTimer(Int timerId)
             Self.Disable()
             Self.Delete()
         EndIf
-    ElseIf timerId == MarkersTimerId
     EndIf
 EndEvent
 
