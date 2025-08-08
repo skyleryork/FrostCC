@@ -9,10 +9,10 @@ ObjectReference[] Function FindSpawnMarkers(Actor source, ObjectReference refere
     Int numFoundMarkers = 0
     int i = 0
     While i < markers.Length
-        referenceMarker.MoveTo(markers[i], 0.0, 0.0, 144.0)
+        referenceMarker.MoveTo(markers[i], 0.0, 0.0, 88.0)
         float distance = source.GetDistance(referenceMarker)
         If distance >= minSpawnDistance && distance <= maxSpawnDistance && markers[i].GetWorldspace() == thisWorldspace
-            If !source.HasDetectionLOS(referenceMarker) && !referenceMarker.HasDirectLOS(source, asTargetNode = targetNode)
+            If !source.HasDirectLOS(referenceMarker) && !referenceMarker.HasDirectLOS(source, asTargetNode = targetNode)
                 If !spawnerKeyword || referenceMarker.FindAllReferencesWithKeyword(spawnerKeyword, minSpawnDistance).Length == 0
                     potentialMarkers[numFoundMarkers] = markers[i]
                     numFoundMarkers += 1
