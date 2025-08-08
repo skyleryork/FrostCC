@@ -1,7 +1,7 @@
 Scriptname SpawnUtils
 
 
-ObjectReference[] Function FindSpawnMarkers(Actor source, Form spawnMarkers, Float minSpawnDistance, Float maxSpawnDistance, Form spawnerKeyword = None, String targetNode = "Head") Global
+ObjectReference[] Function FindSpawnMarkers(Actor source, ObjectReference referenceMarker, Form spawnMarkers, Float minSpawnDistance, Float maxSpawnDistance, Form spawnerKeyword = None, String targetNode = "Head") Global
     WorldSpace thisWorldspace = source.GetWorldspace()
     ObjectReference[] markers = source.FindAllReferencesOfType(spawnMarkers, maxSpawnDistance)
     ObjectReference[] potentialMarkers = new ObjectReference[markers.Length]
@@ -9,10 +9,11 @@ ObjectReference[] Function FindSpawnMarkers(Actor source, Form spawnMarkers, Flo
     Int numFoundMarkers = 0
     int i = 0
     While i < markers.Length
-        float distance = source.GetDistance(markers[i])
+        referenceMarker.MoveTo(markers[i], 0.0, 0.0, 144.0)
+        float distance = source.GetDistance(referenceMarker)
         If distance >= minSpawnDistance && distance <= maxSpawnDistance && markers[i].GetWorldspace() == thisWorldspace
-            If !source.HasDetectionLOS(markers[i]) && !markers[i].HasDirectLOS(source, asTargetNode = targetNode)
-                If !spawnerKeyword || markers[i].FindAllReferencesWithKeyword(spawnerKeyword, minSpawnDistance).Length == 0
+            If !source.HasDetectionLOS(referenceMarker) && !referenceMarker.HasDirectLOS(source, asTargetNode = targetNode)
+                If !spawnerKeyword || referenceMarker.FindAllReferencesWithKeyword(spawnerKeyword, minSpawnDistance).Length == 0
                     potentialMarkers[numFoundMarkers] = markers[i]
                     numFoundMarkers += 1
                 EndIf

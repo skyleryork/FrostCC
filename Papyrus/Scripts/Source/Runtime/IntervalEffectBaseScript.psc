@@ -8,11 +8,6 @@ Bool Property CheckSprinting = False Auto Const
 Bool InRadiation = False
 
 
-Bool Function ExecuteEffect()
-    return False
-EndFunction
-
-
 Bool Function Roll()
     If CheckRadiation
         If !InRadiation
@@ -33,16 +28,20 @@ EndFunction
 
 Event OnInit()
     Parent.OnInit()
-
-    If CheckRadiation
-        RegisterForRadiationDamageEvent(GetActorReference())
-    EndIf
-
     StartTimer(Utility.RandomFloat(0.0, TimerInterval), 1)
 EndEvent
 
 
+Event OnAliasInit()
+    Parent.OnAliasInit()
+    If CheckRadiation
+        RegisterForRadiationDamageEvent(GetActorReference())
+    EndIf
+EndEvent
+
+
 Event OnTimer(Int timerId)
+    Parent.OnTimer(timerId)
     If Roll()
         If ExecuteEffect()
             DecrementCount()
@@ -56,6 +55,7 @@ EndEvent
 
 
 Event OnRadiationDamage(ObjectReference akTarget, bool abIngested)
+    Parent.OnRadiationDamage(akTarget, abIngested)
     If !abIngested
         InRadiation = True
     EndIf

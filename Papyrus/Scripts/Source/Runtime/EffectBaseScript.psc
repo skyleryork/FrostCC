@@ -6,7 +6,7 @@ Float Property Chance Auto Const Mandatory
 Float Property Duration = 0.0 Auto Const
 FormList Property Perks Auto Const Mandatory
 Message Property AddMessage Auto Const Mandatory
-Message Property ExecuteMessage Auto Const Mandatory
+Message Property ExecuteMessage Auto Const
 String Property CategoryConfig Auto Const Mandatory
 String Property ChanceConfig Auto Const Mandatory
 String Property DurationConfig = "" Auto Const
@@ -36,6 +36,11 @@ Int Function GetCount()
 EndFunction
 
 
+String Function GetConfigCategory()
+    return CategoryConfig
+EndFunction
+
+
 Function ShowAddMessage()
     If AddMessage
         AddMessage.Show(Count)
@@ -50,14 +55,16 @@ Function ShowExecuteMessage()
 EndFunction
 
 
-Function EvaluateChance()
+Function EvaluateSettings()
     Float chanceSetting = CrowdControlApi.GetFloatSetting(CategoryConfig, ChanceConfig, Chance)
 
     If Duration > 0.0
         Float durationSetting = CrowdControlApi.GetFloatSetting(CategoryConfig, DurationConfig, Duration)
         CalculatedChance = ChanceLib.CalculateTimescaledChance(chanceSetting, durationSetting, TimerInterval)
+        Debug.Trace(GetOwningQuest().GetName() + " - EvaluateSettings -- calculated " + CalculatedChance + " chance every " + TimerInterval + " second(s)")
     Else
         CalculatedChance = chanceSetting
+        Debug.Trace(GetOwningQuest().GetName() + " - EvaluateSettings -- calculated " + CalculatedChance + " chance every event")
     EndIf
 EndFunction
 
@@ -91,11 +98,16 @@ Function UpdatePerks()
 EndFunction
 
 
+Bool Function ExecuteEffect(Var[] args = None)
+    return False
+EndFunction
+
+
 Event OnInit()
-    EvaluateChance()
+    EvaluateSettings()
 EndEvent
 
 
 Event OnPlayerLoadGame()
-    EvaluateChance()
+    EvaluateSettings()
 EndEvent

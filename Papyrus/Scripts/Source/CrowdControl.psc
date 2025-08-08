@@ -4,24 +4,23 @@ Scriptname CrowdControl extends ReferenceAlias
 
 
 ChanceLib Chance = None
-Misfortune:LoseItemScript LoseItemMisfortune = None
+Misfortune:LoseItemScript BreakGlassMisfortune = None
 Misfortune:IrradiationScript IrradiationMisfortune = None
 Misfortune:RadiationHotspotScript RadiationHotspotMisfortune = None
-Bounty:BountyScript BountyFeralGhouls = None
 Loot:OnKillScript LootNPCWater = None
 Effect:OnKillSanityScript SanityTemporaryInsanity = None
-Swarm:SwarmScript Swarm = None
+Swarm:SwarmScript SwarmFeralGhouls = None
 ; Swarm:SwarmScript SwarmPests = None
 ; Swarm:SwarmScript SwarmMaldenmen = None
 
 ReferenceAlias Property ChanceAlias Auto Const Mandatory
-ReferenceAlias Property LoseItemMisfortuneAlias Auto Const Mandatory
+ReferenceAlias Property BreakGlassMisfortuneAlias Auto Const Mandatory
 ReferenceAlias Property IrradiationMisfortuneAlias Auto Const Mandatory
 ReferenceAlias Property RadiationHotspotMisfortuneAlias Auto Const Mandatory
 ReferenceAlias Property BountyFeralGhoulsAlias Auto Const Mandatory
 ReferenceAlias Property LootNPCWaterAlias Auto Const Mandatory
 ReferenceAlias Property SanityTemporaryInsanityAlias Auto Const Mandatory
-ReferenceAlias Property SwarmAlias Auto Const Mandatory
+ReferenceAlias Property SwarmFeralGhoulsAlias Auto Const Mandatory
 ; ReferenceAlias Property SwarmPestsAlias Auto Const Mandatory
 ; ReferenceAlias Property SwarmMaldenmenAlias Auto Const Mandatory
 
@@ -91,8 +90,8 @@ Function InitVars()
         Chance = ChanceAlias as ChanceLib
 	Endif
 
-    If LoseItemMisfortune == None
-        LoseItemMisfortune = LoseItemMisfortuneAlias as Misfortune:LoseItemScript
+    If BreakGlassMisfortune == None
+        BreakGlassMisfortune = BreakGlassMisfortuneAlias as Misfortune:LoseItemScript
     EndIf
 
     If IrradiationMisfortune == None
@@ -103,10 +102,6 @@ Function InitVars()
         RadiationHotspotMisfortune = RadiationHotspotMisfortuneAlias as Misfortune:RadiationHotspotScript
     EndIf
 
-    If BountyFeralGhouls == None
-        BountyFeralGhouls = BountyFeralGhoulsAlias as Bounty:BountyScript
-    EndIf
-
     If LootNPCWater == None
         LootNPCWater = LootNPCWaterAlias as Loot:OnKillScript
     EndIf
@@ -115,8 +110,8 @@ Function InitVars()
         SanityTemporaryInsanity = SanityTemporaryInsanityAlias as Effect:OnKillSanityScript
     EndIf
 
-    If Swarm == None
-        Swarm = SwarmAlias as Swarm:SwarmScript
+    If SwarmFeralGhouls == None
+        SwarmFeralGhouls = SwarmFeralGhoulsAlias as Swarm:SwarmScript
     EndIf
 
     ; If SwarmPests == None
@@ -547,7 +542,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         PrintMessage(status)
 
     elseif command.command == "misfortune-loseitem"
-        If LoseItemMisfortune.Add()
+        If BreakGlassMisfortune.IncrementCount()
             Respond(id, 0, status)
             PrintMessage(status)
         Else
@@ -557,7 +552,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         EndIf
 
     elseif command.command == "misfortune-contamination"
-        If IrradiationMisfortune.Add()
+        If IrradiationMisfortune.IncrementCount()
             Respond(id, 0, status)
             PrintMessage(status)
         Else
@@ -566,18 +561,8 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
             PrintMessage(status)
         EndIf
 
-    elseif command.command == "bounty-feralghouls"
-        If BountyFeralGhouls.Add()
-            Respond(id, 0, status)
-            PrintMessage(status)
-        Else
-            status = viewer + ", feral ghouls maxed"
-            Respond(id, 1, status)
-            PrintMessage(status)
-        EndIf
-
     elseif command.command == "loot-npc-water"
-        If LootNPCWater.Add()
+        If LootNPCWater.IncrementCount()
             Respond(id, 0, status)
             PrintMessage(status)
         Else
@@ -587,7 +572,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         EndIf
 
     elseif command.command == "sanity-temporaryinsanity"
-        If SanityTemporaryInsanity.Add()
+        If SanityTemporaryInsanity.IncrementCount()
             Respond(id, 0, status)
             PrintMessage(status)
         Else
@@ -597,7 +582,7 @@ Function ProcessCommand(CrowdControlApi:CrowdControlCommand ccCommand)
         EndIf
 
     elseif command.command == "swarm-feralghoul"
-        If Swarm.Add()
+        If SwarmFeralGhouls.IncrementCount()
             Respond(id, 0, status)
             PrintMessage(status)
         Else

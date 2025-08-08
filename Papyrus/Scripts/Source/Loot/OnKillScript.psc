@@ -1,16 +1,20 @@
-Scriptname Loot:OnKillScript extends OnKillBaseScript
+Scriptname Loot:OnKillScript extends Runtime:OnKillEffectBaseScript
 
 
-Form Property OnKillLoot Auto Const Mandatory
+Form Property Loot Auto Const Mandatory
+FormList Property Races Auto Const
+FormList Property ExcludeKeywords Auto Const
 
 
-Runtime:RPGScript:ApplyResult Function OnKilled(Actor player, Actor victim, Int rank)
-    If !OnKillRaces || OnKillRaces.HasForm(victim.GetRace())
-        If !OnKillExcludeKeywords || !victim.HasKeywordInFormList(OnKillExcludeKeywords)
-            victim.AddItem(OnKillLoot)
-            return new Runtime:RPGScript:ApplyResult
+Bool Function ExecuteEffect(Var[] args = None)
+    Actor victim = args[1] as Actor
+
+    If !Races || Races.HasForm(victim.GetRace())
+        If !ExcludeKeywords || !victim.HasKeywordInFormList(ExcludeKeywords)
+            victim.AddItem(Loot)
+            return True
         EndIf
     EndIf
 
-    return None
+    return False
 EndFunction

@@ -1,25 +1,29 @@
-Scriptname Effect:OnKillSanityScript extends OnKillBaseScript
+Scriptname Effect:OnKillSanityScript extends Runtime:OnKillEffectBaseScript
 
 
-Spell Property OnKillSanityEffect Auto Const Mandatory
-FormList Property OnKillActorValues Auto Const Mandatory
+Spell Property SanityEffect Auto Const Mandatory
+FormList Property ActorValues Auto Const Mandatory
+FormList Property Races Auto Const
+FormList Property ExcludeKeywords Auto Const
 
 
-Runtime:RPGScript:ApplyResult Function OnKilled(Actor player, Actor victim, Int rank)
+Bool Function ExecuteEffect(Var[] args = None)
+    Actor victim = args[1] as Actor
+
     Int i = 0
-    While i < OnKillActorValues.GetSize()
-        If player.GetValue(OnKillActorValues.GetAt(i) as ActorValue) <= 0
-            return None
+    While i < ActorValues.GetSize()
+        If GetActorReference().GetValue(ActorValues.GetAt(i) as ActorValue) <= 0
+            return False
         EndIf
         i += 1
     EndWhile
 
-    If !OnKillRaces || OnKillRaces.HasForm(victim.GetRace())
-        If !OnKillExcludeKeywords || !victim.HasKeywordInFormList(OnKillExcludeKeywords)
-            OnKillSanityEffect.Cast(player)
-            return new Runtime:RPGScript:ApplyResult
+    If !Races || Races.HasForm(victim.GetRace())
+        If !ExcludeKeywords || !victim.HasKeywordInFormList(ExcludeKeywords)
+            SanityEffect.Cast(GetActorReference())
+            return True
         EndIf
     EndIf
 
-    return None
+    return False
 EndFunction

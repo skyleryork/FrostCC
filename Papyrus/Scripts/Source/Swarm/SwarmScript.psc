@@ -1,93 +1,50 @@
-Scriptname Swarm:SwarmScript extends ReferenceAlias
+Scriptname Swarm:SwarmScript extends Runtime:IntervalEffectBaseScript
 
 
-ReferenceAlias Property RuntimeAlias Auto Const Mandatory
+Float Property MinSpawnDistance Auto Const Mandatory
+Float Property MaxSpawnDistance Auto Const Mandatory
+
+Int Property MaxSpawns Auto Const Mandatory
+Int Property MaxActiveSpawns Auto Const Mandatory
+
+Form Property SpawnTypes Auto Const Mandatory
+
+Float Property IntervalDays Auto Const Mandatory
+
+String Property MinSpawnDistanceConfig Auto Const Mandatory
+String Property MaxSpawnDistanceConfig Auto Const Mandatory
+String Property MaxSpawnsConfig Auto Const Mandatory
+String Property MaxActiveSpawnsConfig Auto Const Mandatory
+
+GlobalVariable Property LastSwarm Auto Const Mandatory
+Keyword Property ActiveSpawn Auto Const Mandatory
+Activator Property SpawnActivator Auto Const Mandatory
+
+RefCollectionAlias Property Spawns Auto Const Mandatory
+ReferenceAlias Property ReferenceMarker Auto Const Mandatory
 
 
-Float Property SwarmChance Auto Const Mandatory
-Float Property SwarmDuration Auto Const Mandatory
-
-Float Property SwarmMinSpawnDistance Auto Const Mandatory
-Float Property SwarmMaxSpawnDistance Auto Const Mandatory
-
-Int Property SwarmMaxSpawns Auto Const Mandatory
-Int Property SwarmMaxActiveSpawns Auto Const Mandatory
-
-Form Property SwarmSpawn Auto Const Mandatory
-
-FormList Property SwarmPerks Auto Const Mandatory
-Message Property SwarmMessage Auto Const Mandatory
-Message Property SwarmPerkMessage Auto Const Mandatory
-
-Float Property SwarmIntervalDays Auto Const Mandatory
-
-String Property SwarmCategoryConfig = "Swarm" Auto Const
-String Property SwarmChanceConfig Auto Const Mandatory
-String Property SwarmDurationConfig Auto Const Mandatory
-String Property SwarmMinSpawnDistanceConfig Auto Const Mandatory
-String Property SwarmMaxSpawnDistanceConfig Auto Const Mandatory
-String Property SwarmMaxSpawnsConfig Auto Const Mandatory
-String Property SwarmMaxActiveSpawnsConfig Auto Const Mandatory
-
-Keyword Property SwarmActiveSpawn Auto Const Mandatory
-Activator Property SwarmSpawnActivator Auto Const Mandatory
-RefCollectionAlias Property SwarmSpawns Auto Const Mandatory
+Swarm:SwarmSpawnActivatorScript spawnActivatorRef = None
+Float calculatedMinSpawnDistance = 0.0
+Float calculatedMaxSpawnDistance = 0.0
+Int calculatedMaxSpawns = 0
+Int calculatedMaxActiveSpawns = 0
 
 
-Runtime:RPGScript Runtime = None
-Swarm:SwarmSpawnActivatorScript SwarmSpawnActivatorRef = None
-Float minSpawnDistance = 0.0
-Float maxSpawnDistance = 0.0
-Int maxSpawns = 0
-Int maxActiveSpawns = 0
-
-
-Bool Function Add()
-    return Runtime.OnAdded(Self)
-EndFunction
-
-
-Event OnInit()
-    If Runtime == None
-        Runtime = RuntimeAlias as Runtime:RPGScript
-    EndIf
-
-    If !Runtime.ContainsMisfortune(Self)
-        Runtime:RPGScript:StaticData data = new Runtime:RPGScript:StaticData
-        data.ref = Self
-        data.timerInterval = 1.0
-        data.type = Runtime.TypeInterval
-        data.staticChance = SwarmChance
-        data.staticDuration = SwarmDuration
-        data.perks = SwarmPerks
-        data.addedMessage = SwarmPerkMessage
-        data.runMessage = SwarmMessage
-        data.categoryConfig = SwarmCategoryConfig
-        data.chanceConfig = SwarmChanceConfig
-        data.durationConfig = SwarmDurationConfig
-        data.handleParseSettings = True
-        Runtime.RegisterMisfortune(data)
-
-        ParseSettings()
-
-        Debug.Trace("Swarm:SwarmScript: registered")
-    EndIf
-EndEvent
-
-
-Function ParseSettings()
-    minSpawnDistance = CrowdControlApi.GetFloatSetting(SwarmCategoryConfig, SwarmMinSpawnDistanceConfig, SwarmMinSpawnDistance)
-    maxSpawnDistance = CrowdControlApi.GetFloatSetting(SwarmCategoryConfig, SwarmMaxSpawnDistanceConfig, SwarmMaxSpawnDistance)
-    maxSpawns = CrowdControlApi.GetIntSetting(SwarmCategoryConfig, SwarmMaxSpawnsConfig, SwarmMaxSpawns)
-    maxActiveSpawns = CrowdControlApi.GetIntSetting(SwarmCategoryConfig, SwarmMaxActiveSpawnsConfig, SwarmMaxActiveSpawns)
+Function EvaluateSettings()
+    Parent.EvaluateSettings()
+    calculatedMinSpawnDistance = CrowdControlApi.GetFloatSetting(GetConfigCategory(), MinSpawnDistanceConfig, MinSpawnDistance)
+    calculatedMaxSpawnDistance = CrowdControlApi.GetFloatSetting(GetConfigCategory(), MaxSpawnDistanceConfig, MaxSpawnDistance)
+    calculatedMaxSpawns = CrowdControlApi.GetIntSetting(GetConfigCategory(), MaxSpawnsConfig, MaxSpawns)
+    calculatedMaxActiveSpawns = CrowdControlApi.GetIntSetting(GetConfigCategory(), MaxActiveSpawnsConfig, MaxActiveSpawns)
 EndFunction
 
 
 Function RemoveActiveSpawns()
     Int i = 0
-    While i < SwarmSpawns.GetCount()
-        Actor thisActor = SwarmSpawns.GetAt(i) as Actor
-        thisActor.RemoveKeyword(SwarmActiveSpawn)
+    While i < Spawns.GetCount()
+        Actor thisActor = Spawns.GetAt(i) as Actor
+        thisActor.RemoveKeyword(ActiveSpawn)
         i += 1
     EndWhile
 EndFunction
@@ -95,45 +52,53 @@ EndFunction
 
 Bool Function CleanupSpawns()
     Int i = 0
-    While i < SwarmSpawns.GetCount()
-        Actor thisActor = SwarmSpawns.GetAt(i) as Actor
+    While i < Spawns.GetCount()
+        Actor thisActor = Spawns.GetAt(i) as Actor
         If thisActor.IsDead() || !thisActor.Is3DLoaded()
-            thisActor.RemoveKeyword(SwarmActiveSpawn)
-            SwarmSpawns.RemoveRef(thisActor)
+            thisActor.RemoveKeyword(ActiveSpawn)
+            Spawns.RemoveRef(thisActor)
         Else
             i += 1
         EndIf
     EndWhile
-    If SwarmSpawnActivatorRef && SwarmSpawnActivatorRef.IsDeleted()
-        SwarmSpawnActivatorRef = None
+    If spawnActivatorRef && spawnActivatorRef.IsDeleted()
+        spawnActivatorRef = None
     EndIf
-    return SwarmSpawnActivatorRef || (SwarmSpawns.GetCount() > 0)
+    return spawnActivatorRef || (Spawns.GetCount() > 0)
 EndFunction
 
 
 Event OnTimer(Int timerId)
-    If CleanupSpawns()
-        StartTimer(0.5, 1)
+    Parent.OnTimer(timerId)
+    If timerId == 2
+        If CleanupSpawns()
+            StartTimer(0.5, 2)
+        EndIf
     EndIf
 EndEvent
 
 
-Event Runtime:RPGScript.OnParseSettings(Runtime:RPGScript ref, Var[] args)
-    ParseSettings()
-EndEvent
+Bool Function NextSwarm()
+    Float now = Utility.GetCurrentGameTime()
+    If (now - LastSwarm.GetValue()) < IntervalDays
+        return False
+    EndIf
+    LastSwarm.SetValue(now)
+    return True
+EndFunction
 
 
-Runtime:RPGScript:ApplyResult Function OnInterval(Actor player, Int rank)
-    If !Runtime.NextSwarm(SwarmIntervalDays)
-        return None
+Bool Function ExecuteEffect(Var[] args = None)
+    If !NextSwarm()
+        return False
     EndIf
 
     CleanupSpawns()
     RemoveActiveSpawns()
 
-    SwarmSpawnActivatorRef = player.PlaceAtMe(SwarmSpawnActivator) As Swarm:SwarmSpawnActivatorScript
-    SwarmSpawnActivatorRef.Init(SwarmSpawns, SwarmSpawn, maxSpawns, maxActiveSpawns, minSpawnDistance, maxSpawnDistance)
-    StartTimer(0.5, 1)
+    spawnActivatorRef = GetActorReference().PlaceAtMe(SpawnActivator) As Swarm:SwarmSpawnActivatorScript
+    spawnActivatorRef.Init(Spawns, ReferenceMarker.GetReference(), SpawnTypes, calculatedmaxSpawns, calculatedMaxActiveSpawns, calculatedMinSpawnDistance, calculatedMaxSpawnDistance)
+    StartTimer(0.5, 2)
 
-    return new Runtime:RPGScript:ApplyResult
+    return True
 EndFunction

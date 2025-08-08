@@ -15,7 +15,7 @@ Function ShowExecuteMessage()
 EndFunction
 
 
-Bool Function ExecuteEffect()
+Bool Function ExecuteEffect(Var[] args = None)
     Int index = GetCount() - 1
 
     ObjectReference[] hotspots = GetActorReference().FindAllReferencesOfType(RadiationHotspotActivator, Spacing)
