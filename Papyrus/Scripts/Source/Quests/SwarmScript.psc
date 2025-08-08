@@ -1,4 +1,4 @@
-Scriptname Swarm:SwarmScript extends Runtime:IntervalEffectBaseScript
+Scriptname Quests:SwarmScript extends Quests:IntervalEffectBaseScript
 
 
 Float Property MinSpawnDistance Auto Const Mandatory
@@ -58,11 +58,11 @@ Bool Function ExecuteEffect(Var[] args = None)
         return False
     EndIf
 
-    Swarm:SwarmSpawnActivatorScript spawnActivatorRef = GetActorReference().PlaceAtMe(SpawnActivator) As Swarm:SwarmSpawnActivatorScript
+    Swarm:SwarmSpawnActivatorScript spawnActivatorRef = GetPlayer().PlaceAtMe(SpawnActivator) As Swarm:SwarmSpawnActivatorScript
     If calculatedMaxSpawns >= 0
-        spawnActivatorRef.InitMaxCount(GetActorReference(), Spawns, ReferenceMarker.GetReference(), SpawnTypes, calculatedMaxSpawns, calculatedMaxActiveSpawns, calculatedMinSpawnDistance, calculatedMaxSpawnDistance)
+        spawnActivatorRef.InitMaxCount(GetPlayer(), Spawns, ReferenceMarker.GetReference(), SpawnTypes, calculatedMaxSpawns, calculatedMaxActiveSpawns, calculatedMinSpawnDistance, calculatedMaxSpawnDistance)
     ElseIf calculatedSpawnDuration >= 0.0
-        spawnActivatorRef.InitMaxTime(GetActorReference(), Spawns, ReferenceMarker.GetReference(), SpawnTypes, calculatedSpawnDuration, calculatedMaxActiveSpawns, calculatedMinSpawnDistance, calculatedMaxSpawnDistance)
+        spawnActivatorRef.InitMaxTime(GetPlayer(), Spawns, ReferenceMarker.GetReference(), SpawnTypes, calculatedSpawnDuration, calculatedMaxActiveSpawns, calculatedMinSpawnDistance, calculatedMaxSpawnDistance)
     Else
         return False
     EndIf

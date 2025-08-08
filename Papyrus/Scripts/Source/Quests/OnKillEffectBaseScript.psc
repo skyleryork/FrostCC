@@ -1,9 +1,9 @@
-Scriptname Runtime:OnKillEffectBaseScript extends Runtime:EffectBaseScript
+Scriptname Quests:OnKillEffectBaseScript extends Quests:EffectBaseScript
 
 
-Event OnAliasInit()
-    Parent.OnAliasInit()
-    RegisterForRemoteEvent(GetActorReference(), "OnKill")
+Event OnQuestInit()
+    Parent.OnQuestInit()
+    RegisterForRemoteEvent(GetPlayer(), "OnKill")
 EndEvent
 
 

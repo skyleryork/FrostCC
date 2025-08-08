@@ -1,4 +1,4 @@
-Scriptname Misfortune:LoseItemScript extends Runtime:IntervalEffectBaseScript
+Scriptname Quests:LoseItemScript extends Quests:IntervalEffectBaseScript
 
 
 FormList Property Keywords Auto Const Mandatory
@@ -7,7 +7,7 @@ Int[] Property Detection Auto Const Mandatory
 
 
 Bool Function ExecuteEffect(Var[] args = None)
-    Form[] allItems = GetActorReference().GetInventoryItems()
+    Form[] allItems = GetPlayer().GetInventoryItems()
     Int[] filtered = Keywords.FindFormsByKeywords(allItems)
     Int[] indices = ChanceApi.ShuffledIndices(allItems.Length)
 
@@ -32,14 +32,14 @@ Bool Function ExecuteEffect(Var[] args = None)
     Sound loseSound = Sounds.GetAt(index) as Sound
     Int detectionLevel = Detection[index]
 
-    GetActorReference().RemoveItem(item)
+    GetPlayer().RemoveItem(item)
 
     If loseSound
-        loseSound.Play(GetActorReference())
+        loseSound.Play(GetPlayer())
     EndIf
 
     If detectionLevel
-        GetActorReference().CreateDetectionEvent(GetActorReference(), detectionLevel)
+        GetPlayer().CreateDetectionEvent(GetPlayer(), detectionLevel)
     EndIf
 
     return True

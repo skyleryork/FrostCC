@@ -1,4 +1,4 @@
-Scriptname Loot:OnKillScript extends Runtime:OnKillEffectBaseScript
+Scriptname Quests:OnKillScript extends Quests:OnKillEffectBaseScript
 
 
 Form Property Loot Auto Const Mandatory

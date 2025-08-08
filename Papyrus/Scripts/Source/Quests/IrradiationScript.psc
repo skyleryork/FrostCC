@@ -1,4 +1,4 @@
-Scriptname Misfortune:IrradiationScript extends Runtime:IntervalEffectBaseScript
+Scriptname Quests:IrradiationScript extends Quests:IntervalEffectBaseScript
 
 
 FormList Property Pristine Auto Const Mandatory
@@ -6,7 +6,7 @@ FormList Property Irradiated Auto Const Mandatory
 
 
 Bool Function ExecuteEffect(Var[] args = None)
-    Form[] allItems = GetActorReference().GetInventoryItems()
+    Form[] allItems = GetPlayer().GetInventoryItems()
     Int[] indices = ChanceApi.ShuffledIndices(allItems.Length)
 
     Form item = None
@@ -27,8 +27,8 @@ Bool Function ExecuteEffect(Var[] args = None)
         return False
     EndIf
 
-    GetActorReference().RemoveItem(item, abSilent = True)
-    GetActorReference().AddItem(replaceItem, abSilent = True)
+    GetPlayer().RemoveItem(item, abSilent = True)
+    GetPlayer().AddItem(replaceItem, abSilent = True)
 
     return True
 EndFunction

@@ -1,4 +1,4 @@
-Scriptname Misfortune:RadiationHotspotScript extends Runtime:IntervalEffectBaseScript
+Scriptname Quests:RadiationHotspotScript extends Quests:IntervalEffectBaseScript
 
 
 Activator Property RadiationHotspotActivator Auto Const Mandatory
@@ -18,12 +18,12 @@ EndFunction
 Bool Function ExecuteEffect(Var[] args = None)
     Int index = GetCount() - 1
 
-    ObjectReference[] hotspots = GetActorReference().FindAllReferencesOfType(RadiationHotspotActivator, Spacing)
+    ObjectReference[] hotspots = GetPlayer().FindAllReferencesOfType(RadiationHotspotActivator, Spacing)
     If hotspots.Length > 0
         return False
     EndIf
 
-    Misfortune:RadiationHotspotActivatorScript hotspot = GetActorReference().PlaceAtMe(RadiationHotspotActivator) as Misfortune:RadiationHotspotActivatorScript
+    Misfortune:RadiationHotspotActivatorScript hotspot = GetPlayer().PlaceAtMe(RadiationHotspotActivator) as Misfortune:RadiationHotspotActivatorScript
     hotspot.Init(Radiation, DecayScale, DecayDays)
 
     return True

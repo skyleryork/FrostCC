@@ -1,4 +1,4 @@
-Scriptname Runtime:SanityScript extends ReferenceAlias
+Scriptname Quests:SanityScript extends Quest
 
 
 Perk Property aaSanityPerkInsane Auto Const Mandatory
@@ -7,19 +7,20 @@ ActorValue Property aaSanity Auto Mandatory
 ActorValue Property TemporaryInsanity Auto Mandatory
 Message Property aaInsaneWarning_Message Auto Const Mandatory
 Message Property aaSaneWarning_Message Auto Const Mandatory
+ReferenceAlias Property PlayerRef Auto Const Mandatory
 
 
 Int SanityTimerId = 1 Const
 Float SanityTimerInterval = 1.0 Const
 
 
-Event OnInit()
+Event OnQuestInit()
     StartTimer(SanityTimerInterval, SanityTimerId)
 EndEvent
 
 
 Event OnTimer(Int timerId)
-    Actor player = GetActorReference()
+    Actor player = PlayerRef.GetActorRef()
     If player
         Int currentSanityTier = 0
         If player.HasPerk(TemporaryInsanityPerk)

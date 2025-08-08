@@ -1,4 +1,4 @@
-Scriptname ChanceLib extends ReferenceAlias
+Scriptname Quests:ChanceLib extends Quest
 
 
 FormList Property JunkItems Auto
@@ -52,7 +52,7 @@ Int Function LockTierToLevel(Int tier) Global
 EndFunction
 
 
-Event OnInit()
+Event OnQuestInit()
     If JunkItemCounts == None
         JunkItemCounts = New Int[JunkItems.GetSize()]
     EndIf

@@ -1,4 +1,4 @@
-Scriptname Runtime:EffectBaseScript extends ReferenceAlias
+Scriptname Quests:EffectBaseScript extends Quest
 
 
 Float Property TimerInterval = 1.0 Auto Const
@@ -10,8 +10,9 @@ Message Property ExecuteMessage Auto Const
 String Property CategoryConfig Auto Const Mandatory
 String Property ChanceConfig Auto Const Mandatory
 String Property DurationConfig = "" Auto Const
+ReferenceAlias Property PlayerRef Auto Const Mandatory
 
-
+Actor Player = None
 Int Count = 0
 Float CalculatedChance = 0.0
 
@@ -28,6 +29,11 @@ Function DecrementCount()
     If Count
         Count -= 1
     EndIf
+EndFunction
+
+
+Actor Function GetPlayer()
+    return Player
 EndFunction
 
 
@@ -60,11 +66,11 @@ Function EvaluateSettings()
 
     If Duration > 0.0
         Float durationSetting = CrowdControlApi.GetFloatSetting(CategoryConfig, DurationConfig, Duration)
-        CalculatedChance = ChanceLib.CalculateTimescaledChance(chanceSetting, durationSetting, TimerInterval)
-        Debug.Trace(GetOwningQuest().GetName() + " - EvaluateSettings -- calculated " + CalculatedChance + " chance every " + TimerInterval + " second(s)")
+        CalculatedChance = Quests:ChanceLib.CalculateTimescaledChance(chanceSetting, durationSetting, TimerInterval)
+        Debug.Trace(GetName() + " - EvaluateSettings -- calculated " + CalculatedChance + " chance every " + TimerInterval + " second(s)")
     Else
         CalculatedChance = chanceSetting
-        Debug.Trace(GetOwningQuest().GetName() + " - EvaluateSettings -- calculated " + CalculatedChance + " chance every event")
+        Debug.Trace(GetName() + " - EvaluateSettings -- calculated " + CalculatedChance + " chance every event")
     EndIf
 EndFunction
 
@@ -82,16 +88,16 @@ Function UpdatePerks()
     Int clampedCount = Math.Min(Count, Perks.GetSize()) as Int
     While i < clampedCount
         Perk thePerk = Perks.GetAt(i) as Perk
-        If !GetActorReference().HasPerk(thePerk)
-            GetActorReference().AddPerk(thePerk)
+        If !Player.HasPerk(thePerk)
+            Player.AddPerk(thePerk)
         EndIf
         i += 1
     EndWhile
     Int j = Perks.GetSize() - 1
     While j >= i
         Perk thePerk = Perks.GetAt(j) as Perk
-        If GetActorReference().HasPerk(thePerk)
-            GetActorReference().RemovePerk(thePerk)
+        If Player.HasPerk(thePerk)
+            Player.RemovePerk(thePerk)
         EndIf
         j -= 1
     EndWhile
@@ -103,11 +109,16 @@ Bool Function ExecuteEffect(Var[] args = None)
 EndFunction
 
 
-Event OnInit()
+Event OnQuestInit()
+    If Player == None
+        Player = PlayerRef.GetActorRef()
+        RegisterForRemoteEvent(Player, "OnPlayerLoadGame")
+    EndIf
+
     EvaluateSettings()
 EndEvent
 
 
-Event OnPlayerLoadGame()
+Event Actor.OnPlayerLoadGame(Actor akSender)
     EvaluateSettings()
 EndEvent

@@ -1,4 +1,4 @@
-Scriptname Runtime:IntervalEffectBaseScript extends Runtime:EffectBaseScript
+Scriptname Quests:IntervalEffectBaseScript extends Quests:EffectBaseScript
 
 
 Bool Property CheckRadiation = False Auto Const
@@ -14,11 +14,11 @@ Bool Function Roll()
             return False
         Else
             InRadiation = False
-            RegisterForRadiationDamageEvent(GetActorReference())
+            RegisterForRadiationDamageEvent(GetPlayer())
         EndIf
     EndIf
     If CheckSprinting
-        If !(GetActorReference().IsSprinting() || (GetActorReference().IsInPowerArmor() && GetActorReference().IsRunning()))
+        If !(GetPlayer().IsSprinting() || (GetPlayer().IsInPowerArmor() && GetPlayer().IsRunning()))
             return False
         EndIf
     EndIf
@@ -26,17 +26,12 @@ Bool Function Roll()
 EndFunction
 
 
-Event OnInit()
-    Parent.OnInit()
-    StartTimer(Utility.RandomFloat(0.0, TimerInterval), 1)
-EndEvent
-
-
-Event OnAliasInit()
-    Parent.OnAliasInit()
+Event OnQuestInit()
+    Parent.OnQuestInit()
     If CheckRadiation
-        RegisterForRadiationDamageEvent(GetActorReference())
+        RegisterForRadiationDamageEvent(GetPlayer())
     EndIf
+    StartTimer(Utility.RandomFloat(0.0, TimerInterval), 1)
 EndEvent
 
 

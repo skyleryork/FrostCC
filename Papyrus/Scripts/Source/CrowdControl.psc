@@ -3,24 +3,24 @@
 Scriptname CrowdControl extends ReferenceAlias
 
 
-ChanceLib Chance = None
-Misfortune:LoseItemScript BreakGlassMisfortune = None
-Misfortune:IrradiationScript IrradiationMisfortune = None
-Misfortune:RadiationHotspotScript RadiationHotspotMisfortune = None
-Loot:OnKillScript LootNPCWater = None
-Effect:OnKillSanityScript SanityTemporaryInsanity = None
-Swarm:SwarmScript SwarmFeralGhouls = None
+Quests:ChanceLib Chance = None
+Quests:LoseItemScript BreakGlassMisfortune = None
+Quests:IrradiationScript IrradiationMisfortune = None
+Quests:RadiationHotspotScript RadiationHotspotMisfortune = None
+Quests:OnKillScript LootNPCWater = None
+Quests:OnKillSanityScript SanityTemporaryInsanity = None
+Quests:SwarmScript SwarmFeralGhouls = None
 ; Swarm:SwarmScript SwarmPests = None
 ; Swarm:SwarmScript SwarmMaldenmen = None
 
-ReferenceAlias Property ChanceAlias Auto Const Mandatory
-ReferenceAlias Property BreakGlassMisfortuneAlias Auto Const Mandatory
-ReferenceAlias Property IrradiationMisfortuneAlias Auto Const Mandatory
-ReferenceAlias Property RadiationHotspotMisfortuneAlias Auto Const Mandatory
-ReferenceAlias Property BountyFeralGhoulsAlias Auto Const Mandatory
-ReferenceAlias Property LootNPCWaterAlias Auto Const Mandatory
-ReferenceAlias Property SanityTemporaryInsanityAlias Auto Const Mandatory
-ReferenceAlias Property SwarmFeralGhoulsAlias Auto Const Mandatory
+Quest Property ChanceAlias Auto Const Mandatory
+Quest Property BreakGlassMisfortuneAlias Auto Const Mandatory
+Quest Property IrradiationMisfortuneAlias Auto Const Mandatory
+Quest Property RadiationHotspotMisfortuneAlias Auto Const Mandatory
+Quest Property BountyFeralGhoulsAlias Auto Const Mandatory
+Quest Property LootNPCWaterAlias Auto Const Mandatory
+Quest Property SanityTemporaryInsanityAlias Auto Const Mandatory
+Quest Property SwarmFeralGhoulsAlias Auto Const Mandatory
 ; ReferenceAlias Property SwarmPestsAlias Auto Const Mandatory
 ; ReferenceAlias Property SwarmMaldenmenAlias Auto Const Mandatory
 
@@ -87,31 +87,31 @@ Function InitVars()
     endif
 
     If Chance == None
-        Chance = ChanceAlias as ChanceLib
+        Chance = ChanceAlias as Quests:ChanceLib
 	Endif
 
     If BreakGlassMisfortune == None
-        BreakGlassMisfortune = BreakGlassMisfortuneAlias as Misfortune:LoseItemScript
+        BreakGlassMisfortune = BreakGlassMisfortuneAlias as Quests:LoseItemScript
     EndIf
 
     If IrradiationMisfortune == None
-        IrradiationMisfortune = IrradiationMisfortuneAlias as Misfortune:IrradiationScript
+        IrradiationMisfortune = IrradiationMisfortuneAlias as Quests:IrradiationScript
     EndIf
 
     If RadiationHotspotMisfortune == None
-        RadiationHotspotMisfortune = RadiationHotspotMisfortuneAlias as Misfortune:RadiationHotspotScript
+        RadiationHotspotMisfortune = RadiationHotspotMisfortuneAlias as Quests:RadiationHotspotScript
     EndIf
 
     If LootNPCWater == None
-        LootNPCWater = LootNPCWaterAlias as Loot:OnKillScript
+        LootNPCWater = LootNPCWaterAlias as Quests:OnKillScript
     EndIf
 
     If SanityTemporaryInsanity == None
-        SanityTemporaryInsanity = SanityTemporaryInsanityAlias as Effect:OnKillSanityScript
+        SanityTemporaryInsanity = SanityTemporaryInsanityAlias as Quests:OnKillSanityScript
     EndIf
 
     If SwarmFeralGhouls == None
-        SwarmFeralGhouls = SwarmFeralGhoulsAlias as Swarm:SwarmScript
+        SwarmFeralGhouls = SwarmFeralGhoulsAlias as Quests:SwarmScript
     EndIf
 
     ; If SwarmPests == None
