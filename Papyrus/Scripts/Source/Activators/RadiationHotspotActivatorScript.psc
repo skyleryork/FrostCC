@@ -1,4 +1,4 @@
-Scriptname Misfortune:RadiationHotspotActivatorScript extends ObjectReference
+Scriptname Activators:RadiationHotspotActivatorScript extends ObjectReference
 
 
 Int MaxRadiationHazardBits = 4 Const

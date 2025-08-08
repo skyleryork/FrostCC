@@ -23,7 +23,7 @@ Bool Function ExecuteEffect(Var[] args = None)
         return False
     EndIf
 
-    Misfortune:RadiationHotspotActivatorScript hotspot = GetPlayer().PlaceAtMe(RadiationHotspotActivator) as Misfortune:RadiationHotspotActivatorScript
+    Activators:RadiationHotspotActivatorScript hotspot = GetPlayer().PlaceAtMe(RadiationHotspotActivator) as Activators:RadiationHotspotActivatorScript
     hotspot.Init(Radiation, DecayScale, DecayDays)
 
     return True

@@ -58,7 +58,7 @@ Bool Function ExecuteEffect(Var[] args = None)
         return False
     EndIf
 
-    Swarm:SwarmSpawnActivatorScript spawnActivatorRef = GetPlayer().PlaceAtMe(SpawnActivator) As Swarm:SwarmSpawnActivatorScript
+    Activators:SwarmSpawnActivatorScript spawnActivatorRef = GetPlayer().PlaceAtMe(SpawnActivator) As Activators:SwarmSpawnActivatorScript
     If calculatedMaxSpawns >= 0
         spawnActivatorRef.InitMaxCount(GetPlayer(), Spawns, ReferenceMarker.GetReference(), SpawnTypes, calculatedMaxSpawns, calculatedMaxActiveSpawns, calculatedMinSpawnDistance, calculatedMaxSpawnDistance)
     ElseIf calculatedSpawnDuration >= 0.0

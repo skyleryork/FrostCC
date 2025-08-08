@@ -1,4 +1,4 @@
-Scriptname Swarm:SwarmSpawnActivatorScript extends ObjectReference
+Scriptname Activators:SwarmSpawnActivatorScript extends ObjectReference
 
 
 Float SpawnTimerInterval = 1.0 Const
